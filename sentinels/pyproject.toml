@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "sentinels"
+version = "0.1.0"
+description = ""
+authors = ["Athos Balmant <athos.kyoto@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.8"
+psycopg2 = "^2.9.5"
+pyqt6 = "^6.4.2"
+cryptography = "^39.0.2"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
