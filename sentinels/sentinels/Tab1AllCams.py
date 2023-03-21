@@ -66,7 +66,8 @@ class Tab1AllCams(QWidget):
         # Conectar ao banco de dados
         try:
             connection = psycopg2.connect(host="localhost",
-                                          database="postgres",
+                                          database="db_alphas_" +
+                                          "sentinels_2023_144325",
                                           user=self.user_postgresql,
                                           password=self.password_postgresql)
         except (Exception, psycopg2.Error, psycopg2.OperationalError):
@@ -80,9 +81,9 @@ class Tab1AllCams(QWidget):
         cursor = connection.cursor()
 
         # Inserir os dados no banco de dados
-        cursor.execute("INSERT INTO users (first_name, last_name, age, photo) "
-                       "VALUES (%s, %s, %s, %s)",
-                       (first_name, last_name, age,
+        cursor.execute('INSERT INTO users (first_name, last_name, age, photo) '
+                       'VALUES (%s, %s, %s, %s)',
+                       (str(first_name), last_name, age,
                         psycopg2.Binary(photo)))
         connection.commit()
         connection.close()
@@ -92,7 +93,6 @@ class Tab1AllCams(QWidget):
         self.first_name_textbox.setText("")
         self.last_name_textbox.setText("")
         self.age_input_textbox.setText("")
-        self.image_label.clear()
 
         return True
 
