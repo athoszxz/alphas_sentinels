@@ -132,5 +132,5 @@ dmypy.json
 .pytype/
 
 
-sentinels/sentinels/data.txt
-sentinels/sentinels/test.py
+data.txt
+test.py
