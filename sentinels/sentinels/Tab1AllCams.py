@@ -81,7 +81,7 @@ class Tab1AllCams(QWidget):
         cursor = connection.cursor()
 
         # Inserir os dados no banco de dados
-        cursor.execute('INSERT INTO users (first_name, last_name, age, photo) '
+        cursor.execute('INSERT INTO employees (first_name, last_name, birth_date, qr_code) '
                        'VALUES (%s, %s, %s, %s)',
                        (str(first_name), last_name, age,
                         psycopg2.Binary(photo)))

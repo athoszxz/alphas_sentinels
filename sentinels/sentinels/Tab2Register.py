@@ -52,7 +52,7 @@ class Tab2Register(QWidget):
                                   "\nUsuário e/ou senha incorretos." +
                                   "\nVerifique se o PostgreSQL está rodando.")
         cursor = connection.cursor()
-        cursor.execute("SELECT * FROM users")
+        cursor.execute("SELECT * FROM employees")
         rows = cursor.fetchall()
         self.table.setRowCount(len(rows))
         # Preencher a tabela com os dados ignorando o ID
@@ -83,7 +83,7 @@ class Tab2Register(QWidget):
             return False
 
         cursor = connection.cursor()
-        cursor.execute("SELECT photo FROM users WHERE id = %s", (user_id,))
+        cursor.execute("SELECT photo FROM employees WHERE id = %s", (user_id,))
         photo = cursor.fetchone()[0]
         # Criar um objeto de imagem
         image = QImage()
