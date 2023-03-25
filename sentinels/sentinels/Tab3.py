@@ -16,8 +16,14 @@ class Tab3(QWidget):
         self.initUI()
 
     def initUI(self):
-        # Cria um layout vertical principal para a janela
-        main_v_layout = QVBoxLayout()
+        # Cria um layout horizontal principal
+        main_h_layout = QHBoxLayout()
+
+        # Cria um layout vertical para o formulário
+        form_v_layout = QVBoxLayout()
+
+        # Cria um layout vertical para a câmera
+        camera_v_layout = QVBoxLayout()
 
         # Cria um layout horizontal para o botão de iniciar e parar a câmera
         cam_power_button_h_layout = QHBoxLayout()
@@ -48,14 +54,18 @@ class Tab3(QWidget):
         # Redimensiona o botão
         self.take_photo_button.setFixedSize(100, 30)
 
-        # Adiciona tudo ao layout principal vertical
-        main_v_layout.addLayout(cam_power_button_h_layout)
-        main_v_layout.addWidget(self.video_label,
-                                alignment=QtCore.Qt.AlignmentFlag.AlignJustify)
-        main_v_layout.addLayout(take_photo_button_h_layout)
+        # Adiciona tudo ao layout da câmera
+        camera_v_layout.addLayout(cam_power_button_h_layout)
+        camera_v_layout.addWidget(
+            self.video_label, alignment=QtCore.Qt.AlignmentFlag.AlignJustify)
+        camera_v_layout.addLayout(take_photo_button_h_layout)
 
-        # Estabelece qual será layout principal do widget
-        self.setLayout(main_v_layout)
+        # Adiciona tudo ao layout principal
+        main_h_layout.addLayout(form_v_layout)
+        main_h_layout.addLayout(camera_v_layout)
+
+        # Define o layout principal
+        self.setLayout(main_h_layout)
 
         # Cria um Timer para atualizar a imagem da webcam
         self.timer = QTimer(self)
