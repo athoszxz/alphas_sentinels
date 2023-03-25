@@ -64,6 +64,7 @@ class Tab3(QWidget):
         main_h_layout.addLayout(form_v_layout)
         main_h_layout.addLayout(camera_v_layout)
 
+        # treta
         # Define o layout principal
         self.setLayout(main_h_layout)
 
