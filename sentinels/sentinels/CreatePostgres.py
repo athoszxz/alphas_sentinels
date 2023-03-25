@@ -78,15 +78,17 @@ class CreatePostgres:
             " valid BOOLEAN NOT NULL," +
             " qr_code bytea NOT NULL," +
             " face_photo bytea NOT NULL," +
-            "CONSTRAINT attendance_pk PRIMARY KEY (id_attendance, id_employee)" +
-            ") WITH (" +
+            "CONSTRAINT attendance_pk PRIMARY KEY (id_attendance, id_employee)"
+            + ") WITH (" +
             "  OIDS=FALSE " +
             ");")
         # CONSTRAINTS
         cursor.execute(
-            "ALTER TABLE photos ADD CONSTRAINT photos_fk0 FOREIGN KEY (id_employee) REFERENCES employees(id_employee);")
+            "ALTER TABLE photos ADD CONSTRAINT photos_fk0 FOREIGN KEY" +
+            " (id_employee) REFERENCES employees(id_employee);")
         cursor.execute(
-            "ALTER TABLE attendances ADD CONSTRAINT attendance_fk0 FOREIGN KEY (id_employee) REFERENCES employees(id_employee);")
+            "ALTER TABLE attendances ADD CONSTRAINT attendance_fk0 FOREIGN " +
+            "KEY (id_employee) REFERENCES employees(id_employee);")
 
         connection.commit()
         connection.close()

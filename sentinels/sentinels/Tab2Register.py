@@ -1,18 +1,50 @@
 import psycopg2
+import cv2
 import os
 from PyQt6.QtWidgets import QWidget, QTableWidget, QTableWidgetItem, \
-    QPushButton, QLineEdit, QLabel, QMessageBox
+    QPushButton, QLineEdit, QLabel, QMessageBox, QFileDialog
 from PyQt6.QtGui import QImage, QPixmap
 
 
 class Tab2Register(QWidget):
-    def __init__(self, user_postgresql, password_postgresql):
+    def __init__(self, user_postgresql, password_postgresql, cap):
         super().__init__()
         self.user_postgresql = user_postgresql
         self.password_postgresql = password_postgresql
+        self.cap = cap
         self.initUI()
 
+    def open_image(self):
+        # Abrir a janela de seleção de arquivo
+        file_name = QFileDialog.getOpenFileName(self, "Abrir imagem", "",
+                                                "Imagens (*.png *.jpg)")[0]
+        if file_name:
+            # Ler o arquivo binário
+            with open(file_name, "rb") as f:
+                self.image = f.read()
+
     def initUI(self):
+        # Cria um botão para ligar/desligar a webcam
+        self.toggle_webcam_button = QPushButton("Ligar webcam", self)
+        self.toggle_webcam_button.move(20, 90)
+        self.toggle_webcam_button.clicked.connect(self.toggle_webcam)
+
+        # Cria um local para exibir o video da webcam
+        self.video_label = QLabel(self)
+        self.video_label.setFixedSize(580, 300)
+        self.video_label.move(350, 20)
+        self.video_label.setScaledContents(True)
+
+        # Cria um botão para tirar uma foto
+        self.take_photo_button = QPushButton("Tirar foto", self)
+        self.take_photo_button.move(20, 120)
+        self.take_photo_button.clicked.connect(self.take_photo)
+
+        # Cria o botão de Adicionar imagem
+        self.open_image_button = QPushButton("Adicionar imagem", self)
+        self.open_image_button.move(20, 140)
+        self.open_image_button.clicked.connect(self.open_image)
+
         # Criar a tabela
         self.table = QTableWidget(self)
         self.table.move(20, 250)
@@ -83,7 +115,8 @@ class Tab2Register(QWidget):
             return False
 
         cursor = connection.cursor()
-        cursor.execute("SELECT photo FROM employees WHERE id = %s", (user_id,))
+        cursor.execute(
+            "SELECT qr_code FROM employees WHERE id_employee = %s", (user_id,))
         photo = cursor.fetchone()[0]
         # Criar um objeto de imagem
         image = QImage()
@@ -97,3 +130,52 @@ class Tab2Register(QWidget):
         msg_box.setText(message)
         msg_box.exec()
         # exit()
+
+    def toggle_webcam(self):
+        # Verificar se a webcam está ligada
+        if self.toggle_webcam_button.text() == "Ligar webcam":
+            # Ligar a webcam
+            self.capture = cv2.VideoCapture(0)
+            self.capture.set(cv2.CAP_PROP_FRAME_WIDTH, 580)
+            while self.capture.isOpened():
+                ret, frame = self.capture.read()
+                if ret:
+                    # Converter a imagem para o formato que o Qt aceita
+                    height, width, channel = frame.shape
+                    step = channel * width
+                    image = QImage(frame.data, width, height,
+                                   step, QImage.Format.Format_RGB888)
+                    pixmap = QPixmap.fromImage(image)
+                    self.video_label.setPixmap(pixmap)
+                else:
+                    print("Can't receive frame (stream end?). Exiting ...")
+                    # reiniciar o video
+                    self.capture.set(cv2.CAP_PROP_POS_FRAMES, 0)
+                    break
+            self.toggle_webcam_button.setText("Desligar webcam")
+        else:
+            # Desligar a webcam
+            self.capture.release()
+            self.video_label.clear()
+            self.toggle_webcam_button.setText("Ligar webcam")
+
+    def take_photo(self):
+        # Verificar se a webcam está ligada
+        if self.toggle_webcam_button.text() == "Desligar webcam":
+            # Tirar uma foto
+            ret, frame = self.capture.read()
+            if ret:
+                # Converter a imagem para o formato que o Qt aceita
+                image = QImage(frame, frame.shape[1], frame.shape[0],
+                               QImage.Format.Format_RGB888).rgbSwapped()
+                pixmap = QPixmap.fromImage(image)
+                self.image_label.setPixmap(pixmap)
+                self.image = frame
+                # salvar a imagem no disco
+                cv2.imwrite("image.jpg", frame)
+        else:
+            self.show_message_box("Ligue a webcam antes de tirar uma foto!")
+
+    def close_camera(self):
+        # Parar a câmera quando a janela for fechada
+        self.cap.release()

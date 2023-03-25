@@ -10,6 +10,8 @@ python = "^3.8"
 psycopg2 = "^2.9.5"
 pyqt6 = "^6.4.2"
 cryptography = "^39.0.2"
+qrcode = "^7.4.2"
+opencv-python-headless = "^4.7.0.72"
 
 
 [build-system]
