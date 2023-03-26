@@ -1,10 +1,10 @@
 import cv2
 from PyQt6.QtWidgets import QLabel, QWidget, QPushButton, QVBoxLayout, \
-    QHBoxLayout
+    QHBoxLayout, QMessageBox
 from PyQt6.QtGui import QImage, QPixmap
 from PyQt6.QtCore import QTimer
 from PyQt6 import QtCore
-import uuid
+from RegisterForm import RegisterForm
 
 
 class Tab3(QWidget):
@@ -13,14 +13,17 @@ class Tab3(QWidget):
         self.user_postgresql = user_postgresql
         self.password_postgresql = password_postgresql
         self.cap = cap
+        self.total_images = 0
+        self.photos = []
         self.initUI()
 
     def initUI(self):
         # Cria um layout horizontal principal
         main_h_layout = QHBoxLayout()
 
-        # Cria um layout vertical para o formulário
-        form_v_layout = QVBoxLayout()
+        # Adiciona o formulário de registro
+        self.register_form = RegisterForm(
+            self.user_postgresql, self.password_postgresql)
 
         # Cria um layout vertical para a câmera
         camera_v_layout = QVBoxLayout()
@@ -61,7 +64,7 @@ class Tab3(QWidget):
         camera_v_layout.addLayout(take_photo_button_h_layout)
 
         # Adiciona tudo ao layout principal
-        main_h_layout.addLayout(form_v_layout)
+        main_h_layout.addWidget(self.register_form)
         main_h_layout.addLayout(camera_v_layout)
 
         # treta
@@ -87,8 +90,13 @@ class Tab3(QWidget):
             self.cam_power_button.setText('Parar')
 
     def take_photo(self):
+
         # Verificar se a câmera está aberta
         if not self.cap.isOpened():
+            return
+
+        if self.total_images >= 6:
+            QMessageBox.warning(self, "Erro", "Limite de fotos atingido")
             return
 
         # Ler o frame da webcam
@@ -96,11 +104,18 @@ class Tab3(QWidget):
         if not ret:
             return
 
-        # Pegar um uuid para o nome do arquivo
-        filename = str(uuid.uuid4()) + '.png'
+        # Ler o frame da webcam
+        ret, frame = self.cap.read()
+        if not ret:
+            return
 
-        # Salvar a imagem
-        cv2.imwrite(filename, frame)
+        # Array com as fotos
+        self.photos.append(frame)
+
+        # Adicionar a imagem ao formulário de registro
+        self.register_form.add_image(self.photos[self.total_images],
+                                     self.photos)
+        self.total_images += 1
 
     def update_frame(self):
         # Verificar se a câmera está aberta
@@ -129,6 +144,11 @@ class Tab3(QWidget):
 
         # Exibir a imagem na label
         self.video_label.setPixmap(QPixmap.fromImage(p))
+
+    def show_message_box(self, message):
+        msg_box = QMessageBox()
+        msg_box.setText(message)
+        msg_box.exec()
 
     def close_camera(self):
         # Parar a câmera quando a janela for fechada
