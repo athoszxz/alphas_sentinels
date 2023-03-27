@@ -1,7 +1,7 @@
 from PyQt6.QtWidgets import QWidget, QTabWidget, QVBoxLayout
-from Tab1AllCams import Tab1AllCams
-from Tab2Register import Tab2Register
-from Tab3 import Tab3
+from Tab1.Tab1AllCams import Tab1AllCams
+from Tab2.Tab2Register import Tab2Register
+from Tab3.Tab3Register import Tab3Register
 import cv2
 # from CreatePostgres import CreatePostgres
 
@@ -36,13 +36,13 @@ class App(QWidget):
             self.user_postgresql, self.password_postgresql, self.cap)
         tab2 = Tab2Register(
             self.user_postgresql, self.password_postgresql, self.cap)
-        tab3 = Tab3(
+        tab3 = Tab3Register(
             self.user_postgresql, self.password_postgresql, self.cap)
 
         # adiciona as abas ao widget de abas
         tabs.addTab(tab1, "Todas as câmeras")
-        tabs.addTab(tab2, "Cadastrar Usuário")
-        tabs.addTab(tab3, "Câmera")
+        tabs.addTab(tab2, "Reconhecimento")
+        tabs.addTab(tab3, "Cadastro")
 
         # Ao trocar de aba, fecha a webcam da aba anterior e abre a webcam da
         # aba atual

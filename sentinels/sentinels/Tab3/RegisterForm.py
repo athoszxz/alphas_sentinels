@@ -53,6 +53,15 @@ class RegisterForm(QWidget):
         self.last_name_label.setFixedWidth(200)
         self.last_name_textbox.setFixedWidth(200)
 
+        # CPF
+        self.cpf_label = QLabel("CPF", self)
+        self.cpf_label.move(20, 100)
+        self.cpf_textbox = QLineEdit(self)
+        self.cpf_textbox.move(90, 100)
+        # Diminui o tamanho da caixa de texto e da label
+        self.cpf_label.setFixedWidth(200)
+        self.cpf_textbox.setFixedWidth(200)
+
         # Data de nascimento
         self.date_label = QLabel("Data de nascimento", self)
         self.date_label.move(20, 100)
@@ -108,18 +117,30 @@ class RegisterForm(QWidget):
         self.submit_button.clicked.connect(self.submit_data)
         # Diminui o tamanho do botão
         self.submit_button.setFixedWidth(200)
+        self.submit_button.setFixedHeight(50)
+        # Muda as propriedades do botão
+        self.submit_button.setStyleSheet("background-color:  #00bfff;"
+                                         "color: white;"
+                                         "font-weight: bold;"
+                                         "font-size: 20px;"
+                                         "border-radius: 10px;"
+                                         "border: 2px solid black;")
 
         # Adiciona tudo ao layout do formulário
         form_v_layout.addWidget(self.first_name_label)
         form_v_layout.addWidget(self.first_name_textbox)
         form_v_layout.addWidget(self.last_name_label)
         form_v_layout.addWidget(self.last_name_textbox)
+        form_v_layout.addWidget(self.cpf_label)
+        form_v_layout.addWidget(self.cpf_textbox)
         form_v_layout.addWidget(self.date_label)
         form_v_layout.addWidget(self.date_input_textbox)
         form_v_layout.addLayout(self.image_hbox)
         form_v_layout.addLayout(self.image_hbox2)
-        form_v_layout.addWidget(self.submit_button)
+        form_v_layout.addWidget(
+            self.submit_button, alignment=QtCore.Qt.AlignmentFlag.AlignCenter)
 
+        # Adiciona o layout do formulário ao layout da janela
         self.setLayout(form_v_layout)
 
     def submit_data(self):
@@ -128,6 +149,7 @@ class RegisterForm(QWidget):
         # Pegar os valores dos campos
         first_name = self.first_name_textbox.text()
         last_name = self.last_name_textbox.text()
+        cpf = self.cpf_textbox.text()
         date = self.date_input_textbox.text()
         qrcode = self.generate_qrcode(user_id)
 
@@ -151,13 +173,13 @@ class RegisterForm(QWidget):
         # Inserir os dados no banco de dados
         cursor.execute('INSERT INTO employees ' +
                        '(id_employee, first_name, '
-                       + 'last_name, birth_date, qr_code) '
-                       'VALUES (%s, %s, %s, %s, %s)',
-                       (str(user_id), str(first_name), last_name, date,
-                        psycopg2.Binary(qrcode)))
+                       + 'last_name, cpf, birth_date, qr_code) '
+                       'VALUES (%s, %s, %s, %s, %s, %s)',
+                       (str(user_id), str(first_name), last_name, int(cpf),
+                        date, psycopg2.Binary(qrcode)))
 
         # Inserir as fotos no banco de dados
-        for i in range(self.total_images - 1):
+        for i in range(self.total_images):
             cursor.execute('INSERT INTO photos (id_photo, id_employee, photo) '
                            + 'VALUES (%s, %s, %s)',
                            (str(uuid.uuid4()), str(user_id),
@@ -170,6 +192,7 @@ class RegisterForm(QWidget):
         # Limpar os campos
         self.first_name_textbox.setText("")
         self.last_name_textbox.setText("")
+        self.cpf_textbox.setText("")
         self.date_input_textbox.clear()
         self.clear_images()
         self.total_images = 0

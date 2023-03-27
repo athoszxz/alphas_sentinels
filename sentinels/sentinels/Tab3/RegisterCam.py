@@ -1,30 +1,23 @@
+from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLabel,\
+    QPushButton, QMessageBox, QHBoxLayout
+from PyQt6.QtGui import QPixmap, QImage
 import cv2
-from PyQt6.QtWidgets import QLabel, QWidget, QPushButton, QVBoxLayout, \
-    QHBoxLayout, QMessageBox
-from PyQt6.QtGui import QImage, QPixmap
-from PyQt6.QtCore import QTimer
 from PyQt6 import QtCore
-from RegisterForm import RegisterForm
+from PyQt6.QtCore import QTimer
+# from RegisterForm import RegisterForm
 
 
-class Tab3(QWidget):
-    def __init__(self, user_postgresql, password_postgresql, cap):
+class RegisterCam(QWidget):
+    def __init__(self, cap, register_form):
         super().__init__()
-        self.user_postgresql = user_postgresql
-        self.password_postgresql = password_postgresql
         self.cap = cap
+        self.register_form = register_form
+        self.timer = QTimer(self)
         self.total_images = 0
         self.photos = []
         self.initUI()
 
     def initUI(self):
-        # Cria um layout horizontal principal
-        main_h_layout = QHBoxLayout()
-
-        # Adiciona o formulário de registro
-        self.register_form = RegisterForm(
-            self.user_postgresql, self.password_postgresql)
-
         # Cria um layout vertical para a câmera
         camera_v_layout = QVBoxLayout()
 
@@ -57,26 +50,26 @@ class Tab3(QWidget):
         # Redimensiona o botão
         self.take_photo_button.setFixedSize(100, 30)
 
-        # Adiciona tudo ao layout da câmera
+        # Cria uma label para exibir a logo da empresa
+        logo_label = QLabel(self)
+        # Define o tamanho da label
+        logo_label.setFixedSize(250, 200)
+        # Redimensiona a imagem para caber na label
+        logo_label.setScaledContents(True)
+        # Adiciona a imagem à label
+        logo_label.setPixmap(QPixmap('icons/logo.jpg'))
+
+        # Adiciona os layouts à vertical da câmera
         camera_v_layout.addLayout(cam_power_button_h_layout)
-        camera_v_layout.addWidget(
-            self.video_label, alignment=QtCore.Qt.AlignmentFlag.AlignJustify)
+        camera_v_layout.addWidget(self.video_label)
         camera_v_layout.addLayout(take_photo_button_h_layout)
+        camera_v_layout.addWidget(logo_label)
 
-        # Adiciona tudo ao layout principal
-        main_h_layout.addWidget(self.register_form)
-        main_h_layout.addLayout(camera_v_layout)
-
-        # treta
-        # Define o layout principal
-        self.setLayout(main_h_layout)
+        # Define o layout da janela
+        self.setLayout(camera_v_layout)
 
         # Cria um Timer para atualizar a imagem da webcam
-        self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_frame)
-
-        # Exibe a janela
-        self.show()
 
     def toggle_camera(self):
         if self.cap.isOpened():
@@ -90,7 +83,6 @@ class Tab3(QWidget):
             self.cam_power_button.setText('Parar')
 
     def take_photo(self):
-
         # Verificar se a câmera está aberta
         if not self.cap.isOpened():
             return
@@ -115,6 +107,8 @@ class Tab3(QWidget):
         # Adicionar a imagem ao formulário de registro
         self.register_form.add_image(self.photos[self.total_images],
                                      self.photos)
+
+        # Incrementar o total de fotos
         self.total_images += 1
 
     def update_frame(self):

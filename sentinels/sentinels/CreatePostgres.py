@@ -48,6 +48,7 @@ class CreatePostgres:
             " first_name varchar(50) NOT NULL, " +
             " last_name varchar(50) NOT NULL, " +
             " birth_date DATE NOT NULL," +
+            " cpf varchar(11) NOT NULL," +
             " qr_code bytea NOT NULL," +
             " created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP," +
             " deleted_at TIMESTAMP," +
@@ -62,6 +63,7 @@ class CreatePostgres:
             " id_photo varchar(36) NOT NULL, " +
             " id_employee varchar(36) NOT NULL," +
             " photo bytea NOT NULL, " +
+            " profile_photo BOOLEAN NOT NULL DEFAULT 'FALSE',"
             " created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP," +
             " changed_at TIMESTAMP," +
             " deleted_at TIMESTAMP," +
