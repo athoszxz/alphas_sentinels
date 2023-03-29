@@ -4,7 +4,6 @@ from PyQt6.QtGui import QPixmap, QImage
 import cv2
 from PyQt6 import QtCore
 from PyQt6.QtCore import QTimer
-# from RegisterForm import RegisterForm
 
 
 class RegisterCam(QWidget):
@@ -18,6 +17,8 @@ class RegisterCam(QWidget):
         self.initUI()
 
     def initUI(self):
+        self.cap = cv2.VideoCapture(0)
+
         # Cria um layout vertical para a câmera
         camera_v_layout = QVBoxLayout()
 
@@ -78,6 +79,7 @@ class RegisterCam(QWidget):
             self.cam_power_button.setText('Iniciar')
             self.video_label.clear()
         else:
+            self.cap.release()
             self.cap = cv2.VideoCapture(0)
             self.timer.start(30)
             self.cam_power_button.setText('Parar')
@@ -105,7 +107,7 @@ class RegisterCam(QWidget):
         self.photos.append(frame)
 
         # Adicionar a imagem ao formulário de registro
-        self.register_form.add_image(self.photos[self.total_images],
+        self.register_form.add_image(frame,
                                      self.photos)
 
         # Incrementar o total de fotos

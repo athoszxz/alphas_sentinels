@@ -29,44 +29,38 @@ class RegisterForm(QWidget):
         # Cria um layout vertical para o formulário
         form_v_layout = QVBoxLayout()
 
-        # cria uma caixa com borda para o formulário
-
-        # self.setStyleSheet("border: 1px solid black;")
-
         # Criar os campos do formulário:
 
         # Nome
         self.first_name_label = QLabel("Nome", self)
-        self.first_name_label.move(20, 20)
         self.first_name_textbox = QLineEdit(self)
-        self.first_name_textbox.move(90, 20)
         # Diminui o tamanho da caixa de texto e da label
         self.first_name_label.setFixedWidth(200)
         self.first_name_textbox.setFixedWidth(200)
 
         # Sobrenome
         self.last_name_label = QLabel("Sobrenome", self)
-        self.last_name_label.move(20, 60)
+
         self.last_name_textbox = QLineEdit(self)
-        self.last_name_textbox.move(90, 60)
+
         # Diminui o tamanho da caixa de texto e da label
         self.last_name_label.setFixedWidth(200)
         self.last_name_textbox.setFixedWidth(200)
 
         # CPF
         self.cpf_label = QLabel("CPF", self)
-        self.cpf_label.move(20, 100)
+
         self.cpf_textbox = QLineEdit(self)
-        self.cpf_textbox.move(90, 100)
+
         # Diminui o tamanho da caixa de texto e da label
         self.cpf_label.setFixedWidth(200)
         self.cpf_textbox.setFixedWidth(200)
 
         # Data de nascimento
         self.date_label = QLabel("Data de nascimento", self)
-        self.date_label.move(20, 100)
+
         self.date_input_textbox = QDateEdit(self)
-        self.date_input_textbox.move(140, 100)
+
         # Diminui o tamanho da caixa de texto e da label
         self.date_label.setFixedWidth(200)
         self.date_input_textbox.setFixedWidth(200)
@@ -93,7 +87,7 @@ class RegisterForm(QWidget):
 
         # Cria um horizontalbox para adicionar 3 locais para exibir as imagens
         self.image_hbox2 = QHBoxLayout()
-        self.image_hbox2.setSpacing(10)
+        self.image_hbox2.setSpacing(0)
         self.image_hbox2.setContentsMargins(0, 0, 0, 0)
 
         # Cria o local 4 para exibir a imagem com o tamanho de 125x150
@@ -220,7 +214,8 @@ class RegisterForm(QWidget):
 
     def add_image(self, frame, photos):
         self.total_images = len(photos)
-        self.photos = photos
+        self.photos.append(frame)
+
         # Converter o frame para RGB
         rgb_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 

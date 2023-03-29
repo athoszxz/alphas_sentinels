@@ -3,8 +3,9 @@ from Tab1.Tab1AllCams import Tab1AllCams
 from Tab2.Tab2Register import Tab2Register
 from Tab3.Tab3Register import Tab3Register
 from Tab4.Tab4Card import Tab4Card
+from Tab5.Tab5Search import Tab5Search
+
 import cv2
-# from CreatePostgres import CreatePostgres
 
 
 class App(QWidget):
@@ -23,12 +24,7 @@ class App(QWidget):
     def initUI(self):
         self.setWindowTitle(self.title)
         self.setGeometry(self.left, self.top, self.width, self.height)
-        self.cap.release()  # fecha a webcam
-        # # Cria o banco de dados se não existir
-        # create_db = CreatePostgres(self.user_postgresql,
-        #                            self.password_postgresql)
-        # create_db.check()
-
+        self.cap.release()
         # cria o widget de abas
         tabs = QTabWidget()
 
@@ -41,11 +37,16 @@ class App(QWidget):
             self.user_postgresql, self.password_postgresql, self.cap)
         tab4 = Tab4Card(
             self.user_postgresql, self.password_postgresql, self.cap)
+
+        tab5 = Tab5Search(
+            self.user_postgresql, self.password_postgresql, self.cap)
+
         # adiciona as abas ao widget de abas
         tabs.addTab(tab1, "Todas as câmeras")
         tabs.addTab(tab2, "Reconhecimento")
         tabs.addTab(tab3, "Cadastro")
         tabs.addTab(tab4, "Cartão")
+        tabs.addTab(tab5, "Busca")
 
         # Ao trocar de aba, fecha a webcam da aba anterior e abre a webcam da
         # aba atual
@@ -53,6 +54,7 @@ class App(QWidget):
         tabs.currentChanged.connect(tab2.close_camera)
         tabs.currentChanged.connect(tab3.close_camera)
         tabs.currentChanged.connect(tab4.close_camera)
+        tabs.currentChanged.connect(tab5.close_camera)
 
         # adiciona o widget de abas à janela
         self.layout = QVBoxLayout(self)
