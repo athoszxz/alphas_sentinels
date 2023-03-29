@@ -5,7 +5,7 @@ import pickle
 import dlib
 
 
-class Tab2Register(QWidget):
+class Tab2Recognition(QWidget):
     def __init__(self, user_postgresql, password_postgresql, cap):
         super().__init__()
         self.user_postgresql = user_postgresql
@@ -16,7 +16,7 @@ class Tab2Register(QWidget):
     def initUI(self):
 
         # Carregar apenas uma vez o modelo criado com o pickle
-        with open('Tab2/face_model2.pkl', 'rb') as f:
+        with open('Tab2/face_model5.pkl', 'rb') as f:
             self.descriptors = pickle.load(f)
 
             # Criar apenas uma vez o detector de pontos faciais
@@ -24,9 +24,6 @@ class Tab2Register(QWidget):
             'Tab2/shape_predictor_68_face_landmarks.dat')
         self.facerec = dlib.face_recognition_model_v1(
             'Tab2/dlib_face_recognition_resnet_model_v1.dat')
-
-        # # Inicializar o vídeo da câmera
-        # self.camera = self.cap
 
         # Usar um detector de face mais rápido
         self.face_cascade = cv2.CascadeClassifier(
@@ -38,7 +35,7 @@ class Tab2Register(QWidget):
         # Adiciona o QrFaceRecognition
         self.qr_face_recognition = QrFaceRecognition(
             self.descriptors, self.sp, self.facerec,
-            self.face_cascade, self.cap)
+            self.face_cascade, self.user_postgresql, self.password_postgresql)
 
         # Cria um widget teste com um botão
         self.teste = QWidget()
@@ -59,5 +56,6 @@ class Tab2Register(QWidget):
         self.qr_face_recognition.camera.release()
         self.qr_face_recognition.timer.stop()
         self.qr_face_recognition.cam_power_button.setText('Iniciar')
+        self.qr_face_recognition.cam_power = False
         self.qr_face_recognition.video_label.clear()
         return

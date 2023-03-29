@@ -102,23 +102,14 @@ class Tab5Search(QWidget):
         cursor = connection.cursor(cursor_factory=RealDictCursor)
 
         # Executar a consulta SQL
-        query = "SELECT photo from photos WHERE id_employee = %s"
+        query = "SELECT qr_code from employees WHERE id_employee = %s"
         cursor.execute(query, (user_id,))
-        # Pegar a primeira linha como um dicionário
-        row = cursor.fetchone()
-        if row:
-            # Acessar o valor da coluna "photo" diretamente do
-            # dicionário retornado
-            photo = row["photo"]
-
-            image = QPixmap()
-            image.loadFromData(photo)
-            # Exibir a imagem no label
-            self.image_label.setPixmap(image)
-        else:
-            # Caso a consulta não retorne nenhuma linha, exibir uma
-            # mensagem de erro
-            self.show_message_box("Usuário não encontrado.")
+        # Pegar o resultado da consulta
+        result = cursor.fetchone()
+        image = QPixmap()
+        image.loadFromData(result["qr_code"])
+        # Exibir a imagem no label
+        self.image_label.setPixmap(image)
 
     def close_camera(self):
         # Parar a câmera quando a janela for fechada

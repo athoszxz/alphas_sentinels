@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import QWidget, QTabWidget, QVBoxLayout
 from Tab1.Tab1AllCams import Tab1AllCams
-from Tab2.Tab2Register import Tab2Register
+from Tab2.Tab2Recognition import Tab2Recognition
 from Tab3.Tab3Register import Tab3Register
 from Tab5.Tab5Search import Tab5Search
 import cv2
@@ -29,7 +29,7 @@ class App(QWidget):
         # cria as abas
         tab1 = Tab1AllCams(
             self.user_postgresql, self.password_postgresql, self.cap)
-        tab2 = Tab2Register(
+        tab2 = Tab2Recognition(
             self.user_postgresql, self.password_postgresql, self.cap)
         tab3 = Tab3Register(
             self.user_postgresql, self.password_postgresql, self.cap)

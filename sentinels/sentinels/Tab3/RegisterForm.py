@@ -87,7 +87,7 @@ class RegisterForm(QWidget):
 
         # Cria um horizontalbox para adicionar 3 locais para exibir as imagens
         self.image_hbox2 = QHBoxLayout()
-        self.image_hbox2.setSpacing(0)
+        self.image_hbox2.setSpacing(10)
         self.image_hbox2.setContentsMargins(0, 0, 0, 0)
 
         # Cria o local 4 para exibir a imagem com o tamanho de 125x150
