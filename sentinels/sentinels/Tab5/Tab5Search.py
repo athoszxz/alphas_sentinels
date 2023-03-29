@@ -6,7 +6,7 @@ from PyQt6.QtGui import QImage, QPixmap
 from psycopg2.extras import RealDictCursor
 
 
-class Tab4Search(QWidget):
+class Tab5Search(QWidget):
     def __init__(self, user_postgresql, password_postgresql, cap):
         super().__init__()
         self.user_postgresql = user_postgresql
