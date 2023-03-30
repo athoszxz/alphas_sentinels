@@ -41,10 +41,57 @@ class CreatePostgres:
                                   "'db_alphas_sentinels_2023_144325'")
             return False
         cursor = connection.cursor()
+        # Tabela employees
         cursor.execute(
-            "CREATE TABLE IF NOT EXISTS users (id SERIAL PRIMARY KEY, " +
-            "first_name VARCHAR(50), last_name VARCHAR(50)," +
-            " age INTEGER, photo BYTEA)")
+            " CREATE TABLE IF NOT EXISTS employees ( " +
+            " id_employee varchar(36) NOT NULL, " +
+            " first_name varchar(50) NOT NULL, " +
+            " last_name varchar(50) NOT NULL, " +
+            " birth_date DATE NOT NULL," +
+            " cpf varchar(11) NOT NULL," +
+            " qr_code bytea NOT NULL," +
+            " created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP," +
+            " deleted_at TIMESTAMP," +
+            " is_active BOOLEAN NOT NULL DEFAULT 'TRUE'," +
+            "CONSTRAINT employees_pk PRIMARY KEY (id_employee)" +
+            ") WITH (" +
+            "  OIDS=FALSE " +
+            ");")
+        # Tabela photos
+        cursor.execute(
+            " CREATE TABLE IF NOT EXISTS photos ( " +
+            " id_photo varchar(36) NOT NULL, " +
+            " id_employee varchar(36) NOT NULL," +
+            " photo bytea NOT NULL, " +
+            " profile_photo BOOLEAN NOT NULL DEFAULT 'FALSE',"
+            " created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP," +
+            " changed_at TIMESTAMP," +
+            " deleted_at TIMESTAMP," +
+            "CONSTRAINT photos_pk PRIMARY KEY (id_photo, id_employee)" +
+            ") WITH (" +
+            "  OIDS=FALSE " +
+            ");")
+        # Tabela attendances
+        cursor.execute(
+            " CREATE TABLE IF NOT EXISTS attendances ( " +
+            " id_attendance varchar(36) NOT NULL, " +
+            " id_employee varchar(36) NOT NULL," +
+            " check_in TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP," +
+            " valid BOOLEAN NOT NULL," +
+            " qr_code bytea NOT NULL," +
+            " face_photo bytea NOT NULL," +
+            "CONSTRAINT attendance_pk PRIMARY KEY (id_attendance, id_employee)"
+            + ") WITH (" +
+            "  OIDS=FALSE " +
+            ");")
+        # CONSTRAINTS
+        cursor.execute(
+            "ALTER TABLE photos ADD CONSTRAINT photos_fk0 FOREIGN KEY" +
+            " (id_employee) REFERENCES employees(id_employee);")
+        cursor.execute(
+            "ALTER TABLE attendances ADD CONSTRAINT attendance_fk0 FOREIGN " +
+            "KEY (id_employee) REFERENCES employees(id_employee);")
+
         connection.commit()
         connection.close()
         return True
