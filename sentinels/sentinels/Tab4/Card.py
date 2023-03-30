@@ -1,13 +1,8 @@
-from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLabel, QLineEdit, \
-    QDateEdit, QPushButton, QMessageBox, QHBoxLayout
+from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLabel, QLineEdit,\
+    QPushButton, QMessageBox
 from PyQt6.QtGui import QImage, QPixmap
-import cv2
-from PyQt6 import QtCore
-import uuid
 import os
 import psycopg2
-import io
-import qrcode
 
 
 class Card(QWidget):
@@ -92,12 +87,13 @@ class Card(QWidget):
         cursor = connection.cursor()
 
         # Pesquisar os dados no banco de dados
-        cursor.execute('SELECT p.photo, e.id_employee, e.first_name, ' +
-                       ' e.last_name, e.cpf, e.birth_date,e.qr_code ' +
-                       ' FROM employees as e, photos as p ' +
-                       ' WHERE e.id_employee = p.id_employee ' +
-                       ' And p.profile_photo = %s ' +
-                       ' AND e.cpf = %s ', ('true', str(cpf)))
+        cursor.execute(
+            "SELECT p.photo, e.id_employee, e.first_name, e.last_name, " +
+            "e.cpf, e.birth_date, e.qr_code " +
+            "FROM employees e JOIN photos p ON e.id_employee = p.id_employee "
+            + "WHERE p.id_photo = (SELECT MIN(id_photo) FROM photos " +
+            "WHERE id_employee = e.id_employee)" +
+            " AND e.cpf = %s", (cpf,))
 
         rows = cursor.fetchall()
         # self.table.setRowCount(len(rows))
@@ -129,7 +125,8 @@ class Card(QWidget):
             self.profile_picture.setPixmap(QPixmap(image))
             self.first_name_label.setText("Nome Completo: \n" + name)
             self.cpf_label.setText(
-                "CPF: \n" + '{}.{}.{}-{}'.format(cpf[:3], cpf[3:6], cpf[6:9], cpf[9:]))
+                "CPF: \n" + '{}.{}.{}-{}'.format(cpf[:3], cpf[3:6], cpf[6:9],
+                                                 cpf[9:]))
             self.date_label.setText(
                 "Data de Nascimento: \n" + str(format(birth_date, "%d/%m/%Y")))
             self.qr_code.setPixmap(QPixmap(image_qr_code))

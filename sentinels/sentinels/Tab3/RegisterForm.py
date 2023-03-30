@@ -172,20 +172,15 @@ class RegisterForm(QWidget):
                        (str(user_id), str(first_name), last_name, int(cpf),
                         date, psycopg2.Binary(qrcode)))
 
-       # Inserir as fotos no banco de dados
+        # Inserir as fotos no banco de dados
         for i in range(self.total_images):
             # Converter a imagem para bytes já que estava em formato QImage
             _, buffer = cv2.imencode('.jpg', self.photos[i])
-            if i == 0:
-                cursor.execute("INSERT INTO photos (id_photo, id_employee, photo, profile_photo) "
-                               + "VALUES (%s, %s, %s, 'true')",
-                               (str(uuid.uuid4()), str(user_id),
-                                psycopg2.Binary(buffer.tobytes())))
-            else:
-                cursor.execute('INSERT INTO photos (id_photo, id_employee, photo) '
-                               + 'VALUES (%s, %s, %s)',
-                               (str(uuid.uuid4()), str(user_id),
-                                psycopg2.Binary(buffer.tobytes())))
+
+        cursor.execute('INSERT INTO photos (id_photo, id_employee, photo) '
+                       + 'VALUES (%s, %s, %s)',
+                       (str(uuid.uuid4()), str(user_id),
+                         psycopg2.Binary(buffer.tobytes())))
 
         connection.commit()
         connection.close()
