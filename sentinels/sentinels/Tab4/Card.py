@@ -3,6 +3,7 @@ from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLabel, QLineEdit,\
 from PyQt6.QtGui import QImage, QPixmap
 import os
 import psycopg2
+from PyQt6 import QtCore
 
 
 class Card(QWidget):
@@ -13,7 +14,7 @@ class Card(QWidget):
         self.initUI()
 
     def initUI(self):
-        # Cria um layout vertical para o formulário
+        # Cria um layout vertical para o Card
         form_v_layout = QVBoxLayout()
 
         # Caixa para pesquisar por CPF
@@ -29,40 +30,80 @@ class Card(QWidget):
         self.search_button.setFixedWidth(100)
         self.search_button.setFixedHeight(50)
 
-        # Criar os campos do Card:
-        # Foto
-        self.profile_picture = QLabel(self)
-        self.profile_picture.setFixedSize(125, 150)
-        self.profile_picture.setStyleSheet("border: 1px solid black;")
-        self.profile_picture.setScaledContents(True)
-
-        # Nome Completo
-        self.first_name_label = QLabel("Nome Completo:", self)
-        self.first_name_label.move(20, 20)
-
-        # CPF
-        self.cpf_label = QLabel("CPF: ", self)
-        self.cpf_label.move(20, 100)
-
-        # Data de nascimento
-        self.date_label = QLabel("Data de nascimento: ", self)
-        self.date_label.move(20, 100)
-
-        # Qr Code
-        self.qr_code = QLabel(self)
-        self.qr_code.setFixedSize(125, 150)
-        self.qr_code.setStyleSheet("border: 1px solid black;")
-        self.qr_code.setScaledContents(True)
-
-        # Adiciona tudo ao layout do Card
         form_v_layout.addWidget(self.cpf_textbox)
         form_v_layout.addWidget(self.search_button)
 
-        form_v_layout.addWidget(self.profile_picture)
-        form_v_layout.addWidget(self.first_name_label)
-        form_v_layout.addWidget(self.cpf_label)
-        form_v_layout.addWidget(self.date_label)
-        form_v_layout.addWidget(self.qr_code)
+        # Cria uma label para ser o contorno do card
+        self.user_info_label = QLabel(self)
+        # Define o tamanho da label
+        self.user_info_label.setFixedSize(300, 500)
+        # Adiciona bordas à label
+        self.user_info_label.setStyleSheet(
+            "border: 3px solid black; background-color: green;")
+        # Adiciona a label ao layout
+        form_v_layout.addWidget(
+            self.user_info_label,
+            alignment=QtCore.Qt.AlignmentFlag.AlignCenter)
+        # Centraliza as labels dentro do card
+
+        # Criar os campos do Card:
+        # Foto
+        self.profile_picture = QLabel(self)
+        self.profile_picture.setFixedSize(170, 175)
+        self.profile_picture.move(65, 10)
+        self.profile_picture.setStyleSheet(
+            "border: 2px solid black; background-color: white;")
+        self.profile_picture.setParent(self.user_info_label)
+        self.profile_picture.setScaledContents(True)
+        self.profile_picture.show()
+
+        # Nome Completo
+        self.first_name_label = QLabel("Nome Completo:", self)
+        self.first_name_label.setFixedSize(210, 20)
+        self.first_name_label.move(80, 200)
+        self.first_name_label.setStyleSheet(
+            "border: 0px solid red;"
+            "text-align: center;"
+            "font-size: 15px;"
+            "font-weight: bold;"
+            "color: white;")
+        self.first_name_label.setParent(self.user_info_label)
+        self.first_name_label.show()
+
+        # CPF
+        self.cpf_label = QLabel("CPF: ", self)
+        self.cpf_label.setFixedSize(200, 20)
+        self.cpf_label.move(80, 230)
+        self.cpf_label.setStyleSheet(
+            "border: 0px solid red;"
+            "text-align: center;"
+            "font-size: 15px;"
+            "font-weight: bold;"
+            "color: white;")
+        self.cpf_label.setParent(self.user_info_label)
+        self.cpf_label.show()
+
+        # Data de nascimento
+        self.date_label = QLabel("Data de nascimento: ", self)
+        self.date_label.move(80, 260)
+        self.date_label.setStyleSheet(
+            "border: 0px solid red;"
+            "text-align: center;"
+            "font-size: 15px;"
+            "font-weight: bold;"
+            "color: white;")
+        self.date_label.setParent(self.user_info_label)
+        self.date_label.show()
+
+        # Qr Code
+        self.qr_code = QLabel(self)
+        self.qr_code.setFixedSize(150, 175)
+        self.qr_code.move(80, 300)
+        self.qr_code.setStyleSheet(
+            "border: 2px solid black; background-color: white;")
+        self.qr_code.setScaledContents(True)
+        self.qr_code.setParent(self.user_info_label)
+        self.qr_code.show()
 
         # Adiciona o layout do formulário ao layout da janela
         self.setLayout(form_v_layout)
@@ -123,12 +164,11 @@ class Card(QWidget):
             image_qr_code.loadFromData(qrcode)
 
             self.profile_picture.setPixmap(QPixmap(image))
-            self.first_name_label.setText("Nome Completo: \n" + name)
-            self.cpf_label.setText(
-                "CPF: \n" + '{}.{}.{}-{}'.format(cpf[:3], cpf[3:6], cpf[6:9],
-                                                 cpf[9:]))
-            self.date_label.setText(
-                "Data de Nascimento: \n" + str(format(birth_date, "%d/%m/%Y")))
+            self.first_name_label.setText(name)
+            self.cpf_label.setText('{}.{}.{}-{}'.format(cpf[:3], cpf[3:6],
+                                                        cpf[6:9],
+                                                        cpf[9:]))
+            self.date_label.setText(str(format(birth_date, "%d/%m/%Y")))
             self.qr_code.setPixmap(QPixmap(image_qr_code))
 
         connection.commit()
