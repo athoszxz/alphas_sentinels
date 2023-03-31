@@ -44,9 +44,10 @@ class PostgreeForms(QWidget):
         self.button_submit.resize(80, 30)
         self.button_submit.move(200, 120)
 
-        self.check_file_exists()
+        self.check_training_folder()
+        self.check_postgres_file_exists()
 
-    def check_file_exists(self):
+    def check_postgres_file_exists(self):
         if os.path.exists("data.txt"):
             with open("data.txt", "rb") as f:
                 token = f.readline()
@@ -59,6 +60,14 @@ class PostgreeForms(QWidget):
                 self.close()
         else:
             self.show()
+
+    # Método para verificar se existe uma pasta chamada "training" no diretório
+    # atual se não existir, cria a pasta
+    def check_training_folder(self):
+        # Verifica se a pasta "training" existe no diretório atual
+        if not os.path.exists("training"):
+            # Se não existir, cria a pasta
+            os.mkdir("training")
 
     @pyqtSlot()
     def on_click_submit(self):

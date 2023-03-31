@@ -22,7 +22,9 @@ class Tab3Register(QWidget):
             self.user_postgresql, self.password_postgresql)
 
         # Adiciona a câmera
-        self.register_cam = RegisterCam(self.cap, self.register_form)
+        self.register_cam = RegisterCam(
+            self.cap, self.register_form,
+            self.user_postgresql, self.password_postgresql)
 
         # Adiciona tudo ao layout principal
         main_h_layout.addWidget(self.register_form)

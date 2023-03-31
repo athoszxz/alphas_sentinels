@@ -1,5 +1,5 @@
 from uuid import uuid4
-from pyzbar import pyzbar
+from pyzbar.pyzbar import decode
 from scipy.spatial import KDTree
 import dlib
 import cv2
@@ -18,18 +18,29 @@ class QrFaceRecognition(QWidget):
                  face_cascade: object, user_postgresql: str,
                  password_postgresql: str) -> None:
         super().__init__()
+        # Conexão com o banco de dados
         self.user_postgresql: str = user_postgresql
         self.password_postgresql: str = password_postgresql
-        self.end: bool = False
-        # Carregar apenas uma vez o modelo criado com o pickle
-        self.descriptors = descriptors
 
-        # Criar apenas uma vez o detector de pontos faciais
+        # Variável para verificar se o usuário está na frente da câmera
+        self.end: bool = False
+
+        # Carrega o modelo de treinamento criado com o pickle
+        self.descriptors: List = descriptors
+
+        # Carrega o detector de pontos faciais
         self.sp: object = sp
+
+        # Carrega o reconhecedor de faces
         self.facerec: object = facerec
+
         # Contador para verificar se a pessoa está na frente da câmera
         self.no_face_counter: int = 0
 
+        # Variável para verificar se o usuário está sendo reconhecido
+        self.recognized_cont: int = 0
+
+        # Variável para verificar se a câmera está ligada
         self.cam_power: bool = False
 
         # Inicializar o vídeo da câmera
@@ -38,11 +49,14 @@ class QrFaceRecognition(QWidget):
         # Usar um detector de face mais rápido
         self.face_cascade = face_cascade
 
+        # Lista para armazenar os ids dos usuários
         self.all_users_ids: List[str] = []
+        # Dicionário para armazenar os nomes completos dos usuários
         self.all_users_names: Dict[str, str] = {}
+        # Dicionário para armazenar os ids dos usuários reconhecidos
         self.recognized_user_id: str = ''
 
-        # Usar um mecanismo de cache para resultados de detecção
+        # Mecanismo de cache para resultados de detecção
         self.last_dets: List[object] = []
         self.last_shapes: List[object] = []
         self.last_descriptors: List[object] = []
@@ -62,6 +76,15 @@ class QrFaceRecognition(QWidget):
         # Redimensiona o botão
         self.cam_power_button.setFixedSize(100, 30)
 
+        # cria um layout horizontal para uma mensagem de erro
+        error_h_layout = QHBoxLayout()
+        # cria uma label para exibir uma mensagem de erro
+        self.error_label = QLabel(self)
+        # define o tamanho da label
+        self.error_label.setFixedSize(400, 50)
+        # adiciona a label ao layout
+        error_h_layout.addWidget(self.error_label)
+
         # Cria um layout vertical para a câmera
         camera_v_layout = QVBoxLayout()
         # Cria uma label para exibir a webcam
@@ -80,6 +103,7 @@ class QrFaceRecognition(QWidget):
 
         # Adiciona a label ao layout
         camera_v_layout.addLayout(cam_power_button_h_layout)
+        camera_v_layout.addLayout(error_h_layout)
         camera_v_layout.addWidget(self.video_label)
         camera_v_layout.addWidget(self.empty_label)
 
@@ -90,7 +114,6 @@ class QrFaceRecognition(QWidget):
         # Define o tamanho da label
         self.user_access_label.setFixedSize(300, 50)
         # Adiciona um texto à label
-        self.user_access_label.setText("Status de acesso")
         # Define a fonte do texto
         self.user_access_label.setFont(QFont("Arial", 12))
         # Define a cor do texto e negrito
@@ -146,13 +169,6 @@ class QrFaceRecognition(QWidget):
         self.user_cpf_label.setFixedSize(200, 30)
         self.user_cpf_label.show()
 
-        # self.user_birthdate_label = QLabel(self)
-        # self.user_birthdate_label.move(50, 240)
-        # self.user_birthdate_label.setStyleSheet("color: black;")
-        # self.user_birthdate_label.setParent(self.user_info_label)
-        # self.user_birthdate_label.setFixedSize(200, 20)
-        # self.user_birthdate_label.show()
-
         self.user_qr_code_label = QLabel(self)
         self.user_qr_code_label.move(78, 280)
         self.user_qr_code_label.setParent(self.user_info_label)
@@ -171,12 +187,29 @@ class QrFaceRecognition(QWidget):
         # Define o layout
         self.setLayout(main_h_layout)
 
+        self.check_model()
+
         # Inicia o timer para atualizar a imagem da webcam
         self.timer = QtCore.QTimer()
         self.timer.timeout.connect(self.qr_capture)
 
-    # Método para pegar todos os ids dos usuários
+    # Método que verifica se o arquivo face_model5.pkl existe dentro da pasta
+    # training, se não existir, desabilita o botão de ligar a câmera e exibe
+    # uma mensagem de erro "Modelo não encontrado" em vermelho
+    def check_model(self):
+        if not os.path.exists("training/face_model5.pkl"):
+            self.cam_power_button.setEnabled(False)
+            self.error_label.setText("Modelo não encontrado, Registre ao" +
+                                     " menos 1 usuário e treine o modelo")
+            # centraliza o texto
+            self.error_label.setAlignment(
+                QtCore.Qt.AlignmentFlag.AlignCenter)
+            self.error_label.setStyleSheet("color: red;")
+        else:
+            self.cam_power_button.setEnabled(True)
+            self.error_label.setText("")
 
+    # Método para pegar todos os ids dos usuários
     def get_all_users_ids(self):
         try:
             connection = psycopg2.connect(host="localhost",
@@ -230,10 +263,15 @@ class QrFaceRecognition(QWidget):
             self.video_label.clear()
             # Limpar as informações do usuário
             self.user_access_label.clear()
+            self.user_access_label.setStyleSheet("border: 0px solid black;")
             self.user_photo_label.clear()
+            self.user_photo_label.setStyleSheet("border: 0px solid black;")
             self.user_name_label.clear()
+            self.user_name_label.setStyleSheet("border: 0px solid black;")
             self.user_cpf_label.clear()
+            self.user_cpf_label.setStyleSheet("border: 0px solid black;")
             self.user_qr_code_label.clear()
+            self.user_qr_code_label.setStyleSheet("border: 0px solid black;")
             self.user_info_label.setStyleSheet("border: 0px solid black;")
             self.user_access_label.clear()
         else:
@@ -272,7 +310,7 @@ class QrFaceRecognition(QWidget):
             return
 
         # Detectar o QR Code
-        barcodes = pyzbar.decode(img)
+        barcodes = decode(img)
 
         # Se encontrou um QR Code, exibir a mensagem e o conteúdo
         # do QR Code
@@ -291,19 +329,26 @@ class QrFaceRecognition(QWidget):
                                                    + " facial...")
                     self.user_access_label.setStyleSheet("color: blue;")
                     self.user_info_label.setStyleSheet(
-                        "border: 3px solid blue;")
+                        "border: 3px solid black;"
+                        "background-color: blue;")
                     self.user_photo_label.setPixmap(
                         QPixmap.fromImage(
                             QImage.fromData(
                                 self.all_users_names
                                 [barcode_info][4])))  # type: ignore
                     self.user_photo_label.show()
+                    self.user_name_label.setStyleSheet(
+                        "border: 3px solid black;"
+                        "background-color: white;")
                     self.user_name_label.setText(
                         self.all_users_names[barcode_info][0] + " " +
                         self.all_users_names[barcode_info][1])
                     self.user_name_label.show()
                     self.user_cpf_label.setText(
                         self.all_users_names[barcode_info][3])
+                    self.user_cpf_label.setStyleSheet(
+                        "border: 3px solid black;"
+                        "background-color: white;")
                     self.user_cpf_label.show()
                     self.user_qr_code_label.setPixmap(
                         QPixmap.fromImage(
@@ -436,6 +481,11 @@ class QrFaceRecognition(QWidget):
                 det, label = future.result()
                 if label is not None:
                     if label == self.recognized_user_id:
+                        self.recognized_cont += 1
+
+                    if label == self.recognized_user_id and \
+                            self.recognized_cont > 4:
+                        self.recognized_cont = 0
                         # Rosto reconhecido, zerar contador de loops
                         # sem rosto correspondente ao qr code
 
@@ -452,7 +502,18 @@ class QrFaceRecognition(QWidget):
                         self.user_access_label.setText("Acesso liberado!")
                         self.user_access_label.setStyleSheet("color: green;")
                         self.user_info_label.setStyleSheet(
-                            "border: 3px solid green;")
+                            "border: 3px solid black;"
+                            "background-color: green;")
+                        self.user_photo_label.setStyleSheet(
+                            "border: 3px solid black;")
+                        self.user_name_label.setStyleSheet(
+                            "border: 3px solid black;"
+                            "background-color: white;")
+                        self.user_cpf_label.setStyleSheet(
+                            "border: 3px solid black;"
+                            "background-color: white;")
+                        self.user_qr_code_label.setStyleSheet(
+                            "border: 3px solid black;")
                         # Registrar no banco de dados
                         try:
                             connection = psycopg2.connect(
@@ -494,15 +555,35 @@ class QrFaceRecognition(QWidget):
                         self.timer.timeout.connect(self.qr_capture)
                         self.timer.start(1)
                         return
+                    elif label == self.recognized_user_id:
+
+                        cv2.rectangle(img, (det[0], det[1]),
+                                      (det[0]+det[2], det[1]+det[3]),
+                                      (255, 0, 0), 2)
+                        cv2.putText(img, self.all_users_names[label][0],
+                                    (det[0], det[1] - 10),
+                                    cv2.FONT_HERSHEY_SIMPLEX, 0.9,
+                                    (255, 0, 0), 2)
+                        # Exibir imagem na label
+                        self.video_label.setPixmap(QPixmap.fromImage(
+                            self.get_qimage(img)))
                     else:
+                        self.recognized_cont = 0
                         self.user_access_label.setText("Acesso negado!")
                         self.user_access_label.setStyleSheet("color: red;")
                         self.user_info_label.setStyleSheet(
-                            "border: 0px solid red;")
-                        self.user_photo_label.clear()
-                        self.user_name_label.clear()
-                        self.user_cpf_label.clear()
-                        self.user_qr_code_label.clear()
+                            "border: 3px solid black;"
+                            "background-color: red;")
+                        self.user_photo_label.setStyleSheet(
+                            "border: 3px solid black;")
+                        self.user_name_label.setStyleSheet(
+                            "border: 3px solid black;"
+                            "background-color: white;")
+                        self.user_cpf_label.setStyleSheet(
+                            "border: 3px solid black;"
+                            "background-color: white;")
+                        self.user_qr_code_label.setStyleSheet(
+                            "border: 3px solid black;")
                         cv2.rectangle(img, (det[0], det[1]),
                                       (det[0]+det[2], det[1]+det[3]),
                                       (0, 0, 255), 2)
@@ -518,8 +599,42 @@ class QrFaceRecognition(QWidget):
                         # Verificar se o contador de loops sem rosto
                         # correspondente
                         # ao qr code ultrapassou o limite máximo
-                        MAX_NO_FACE_COUNT = 35
+                        MAX_NO_FACE_COUNT = 15
                         if self.no_face_counter > MAX_NO_FACE_COUNT:
+                            # Registrar no banco de dados
+                            try:
+                                connection = psycopg2.connect(
+                                    host="localhost",
+                                    database="db_alphas_" +
+                                    "sentinels_2023_144325",
+                                    user=self.user_postgresql,
+                                    password=self.password_postgresql)
+                            except (Exception, psycopg2.Error,
+                                    psycopg2.OperationalError):
+                                # Verificar se o arquivo data.txt existe
+                                # e excluí-lo
+                                if os.path.exists("data.txt"):
+                                    os.remove("data.txt")
+                                self.show_message_box(
+                                    "Erro ao conectar ao banco de dados!" +
+                                    "\nUsuário e/ou senha incorretos." +
+                                    "\nVerifique se o PostgreSQL está rodando."
+                                )
+                                return False
+
+                            uuid = str(uuid4())
+
+                            cursor = connection.cursor()
+                            cursor.execute("INSERT INTO attendances(" +
+                                           "id_attendance, id_employee," +
+                                           "valid, qr_code,face_photo) " +
+                                           "VALUES ( %s, %s, %s, %s, %s)",
+                                           (uuid, label, False,
+                                            self.all_users_names[label][2],
+                                            self.all_users_names[label][4],))
+                            connection.commit()
+                            cursor.close()
+                            connection.close()
                             # Rosto não detectado por muito tempo, voltar
                             # para a
                             # captura do qr code
@@ -529,109 +644,8 @@ class QrFaceRecognition(QWidget):
                             # conectar timer para capturar qr code
                             self.timer.timeout.connect(self.qr_capture)
                             self.timer.start(1)
+                            self.no_face_counter = 0
                             return
-
-    # def face_capture(self):
-    #     # Verificar se a câmera está aberta
-    #     if not self.camera.isOpened():
-    #         return
-
-    #     # Ler o frame da webcam
-    #     ret, img = self.camera.read()
-    #     if not ret:
-    #         return
-    #     # Ler o frame
-    #     _, img = self.camera.read()
-    #     # Detectar os rostos usando um detector de face mais rápido
-    #     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    #     dets = self.face_cascade.detectMultiScale(
-    #         gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
-
-    #     # Armazenar os resultados de detecção e extração de
-    #     # características em cache
-    #     shapes = []
-    #     face_descriptors = []
-    #     for det in dets:
-    #         if not self.cam_power:
-    #             return
-    #         shape = self.sp(img, dlib.rectangle(
-    #             left=det[0], top=det[1], right=det[0]+det[2],
-    #             bottom=det[1]+det[3]))
-    #         face_descriptor = self.facerec.compute_face_descriptor(
-    #             img, shape)
-    #         shapes.append(shape)
-    #         face_descriptors.append(face_descriptor)
-
-    #     self.last_dets = dets
-    #     self.last_shapes = shapes
-    #     self.last_descriptors = face_descriptors
-
-    #     # Mostrar o frame
-    #     cv2.rectangle(img, (20, 20), (440, 80), (0, 0, 0), -1)
-    #     cv2.putText(img, "Reconhecendo Rosto...", (60, 60),
-    #                 cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-    #     # Exibir imagem na label
-    #     self.video_label.setPixmap(QPixmap.fromImage(
-    #         self.get_qimage(img)))
-
-    #     # Processar os resultados em paralelo usando threads
-    #     with concurrent.futures.ThreadPoolExecutor() as executor:
-    #         futures = []
-    #         for det, shape, face_descriptor in zip(self.last_dets,
-    #                                                self.last_shapes,
-    #                                                self.last_descriptors):
-    #             futures.append(executor.submit(self.process_face, img,
-    #                                            det, shape, face_descriptor,
-    #                                            self.descriptors))
-
-    #         # Escrever o resultado no frame
-    #         for future in concurrent.futures.as_completed(futures):
-    #             if not self.cam_power:
-    #                 return
-    #             det, label = future.result()
-    #             if label is not None:
-    #                 if label == self.recognized_user_id:
-    #                     cv2.rectangle(img, (det[0], det[1]),
-    #                                   (det[0]+det[2], det[1]+det[3]),
-    #                                   (0, 255, 0), 2)
-    #                     cv2.putText(img, self.all_users_names[label][0],
-    #                                 (det[0], det[1] - 10),
-    #                                 cv2.FONT_HERSHEY_SIMPLEX, 0.9,
-    #                                 (0, 255, 0), 2)
-    #                     # Exibir imagem na label
-    #                     self.video_label.setPixmap(QPixmap.fromImage(
-    #                         self.get_qimage(img)))
-    #                     self.user_access_label.setText("Acesso liberado!")
-    #                     self.user_access_label.setStyleSheet("color: green;")
-    #                     self.user_info_label.setStyleSheet(
-    #                         "border: 3px solid green;")
-    #                     cv2.waitKey(3000)
-    #                     self.timer.stop()
-    #                     # desconectar timer
-    #                     self.timer.timeout.disconnect(self.face_capture)
-    #                     # conectar timer para capturar qr code
-    #                     self.timer.timeout.connect(self.qr_capture)
-    #                     self.timer.start(1)
-    #                     return
-    #                 else:
-    #                     self.user_access_label.setText("Acesso negado!")
-    #                     self.user_access_label.setStyleSheet("color: red;")
-    #                     self.user_info_label.setStyleSheet(
-    #                         "border: 0px solid red;")
-    #                     self.user_photo_label.clear()
-    #                     self.user_name_label.clear()
-    #                     self.user_cpf_label.clear()
-    #                     self.user_qr_code_label.clear()
-    #                     cv2.rectangle(img, (det[0], det[1]),
-    #                                   (det[0]+det[2], det[1]+det[3]),
-    #                                   (0, 0, 255), 2)
-    #                     cv2.putText(img, 'Rosto e QR Code Distintos',
-    #                                 (det[0], det[1] - 10),
-    #                                 cv2.FONT_HERSHEY_SIMPLEX, 0.9,
-    #                                 (0, 0, 255), 2)
-    #                     # Exibir imagem na label
-    #                     self.video_label.setPixmap(QPixmap.fromImage(
-    #                         self.get_qimage(img)))
 
     def process_face(self, img, det, shape,
                      face_descriptor, descriptors) -> Tuple:
