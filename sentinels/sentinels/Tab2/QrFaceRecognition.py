@@ -227,31 +227,50 @@ class QrFaceRecognition(QWidget):
     # Método para pegar todos os ids dos usuários
     def get_all_users_ids(self):
         connection = self.connect_postgres()
-        cursor = connection.cursor()
-        cursor.execute("SELECT id_employee from employees")
-        self.all_users_ids = cursor.fetchall()
+        if connection:
+            cursor = connection.cursor()
+            cursor.execute("SELECT id_employee from employees")
+            self.all_users_ids = cursor.fetchall()
 
-        cursor.execute(
-            "SELECT e.id_employee, e.first_name, e.last_name, e.qr_code," +
-            " e.cpf, p.photo " +
-            "FROM employees e JOIN photos p ON e.id_employee = p.id_employee "
-            + "WHERE p.id_photo = (SELECT MIN(id_photo) FROM photos " +
-            "WHERE id_employee = e.id_employee)")
-        # Transformar a lista de tuplas com 3 elementos
-        # em um dicionário onde a chave é o id do usuário
-        # e o valor é uma lista com o nome e sobrenome do usuário
-        results = cursor.fetchall()
-        for row in results:
-            id_employee = row[0]
-            first_name = row[1]
-            last_name = row[2]
-            qr_code = row[3]
-            cpf = row[4]
-            photo = row[5]
-            self.all_users_names[id_employee] = (first_name, last_name,
-                                                 qr_code, cpf, photo)
-        connection.close()
-        return True
+            cursor.execute(
+                "SELECT e.id_employee, e.first_name, e.last_name, e.qr_code," +
+                " e.cpf, p.photo " +
+                "FROM employees e JOIN photos p ON e.id_employee = " +
+                "p.id_employee "
+                + "WHERE p.id_photo = (SELECT MIN(id_photo) FROM photos " +
+                "WHERE id_employee = e.id_employee)")
+            # Transformar a lista de tuplas com 3 elementos
+            # em um dicionário onde a chave é o id do usuário
+            # e o valor é uma lista com o nome, sobrenome, qr_code, cpf e foto
+            results = cursor.fetchall()
+            for row in results:
+                id_employee = row[0]
+                first_name = row[1]
+                last_name = row[2]
+                qr_code = row[3]
+                cpf = row[4]
+                photo = row[5]
+                self.all_users_names[id_employee] = (first_name, last_name,
+                                                     qr_code, cpf, photo)
+            connection.close()
+        else:
+            self.show_message_box("Erro ao conectar ao banco de dados!" +
+                                  "\nUsuário e/ou senha incorretos." +
+                                  "\nVerifique se o PostgreSQL está rodando.")
+
+    # Método para limpar as informações do usuário
+    def clear_user_info(self):
+        self.user_access_label.clear()
+        self.user_access_label.setStyleSheet("border: 0px solid black;")
+        self.user_photo_label.clear()
+        self.user_photo_label.setStyleSheet("border: 0px solid black;")
+        self.user_name_label.clear()
+        self.user_name_label.setStyleSheet("border: 0px solid black;")
+        self.user_cpf_label.clear()
+        self.user_cpf_label.setStyleSheet("border: 0px solid black;")
+        self.user_qr_code_label.clear()
+        self.user_qr_code_label.setStyleSheet("border: 0px solid black;")
+        self.user_info_label.setStyleSheet("border: 0px solid black;")
 
     # Método para iniciar e parar a câmera
     def toggle_camera(self) -> None:
@@ -263,18 +282,7 @@ class QrFaceRecognition(QWidget):
             self.cam_power_button.setText('Iniciar')
             self.video_label.clear()
             # Limpar as informações do usuário
-            self.user_access_label.clear()
-            self.user_access_label.setStyleSheet("border: 0px solid black;")
-            self.user_photo_label.clear()
-            self.user_photo_label.setStyleSheet("border: 0px solid black;")
-            self.user_name_label.clear()
-            self.user_name_label.setStyleSheet("border: 0px solid black;")
-            self.user_cpf_label.clear()
-            self.user_cpf_label.setStyleSheet("border: 0px solid black;")
-            self.user_qr_code_label.clear()
-            self.user_qr_code_label.setStyleSheet("border: 0px solid black;")
-            self.user_info_label.setStyleSheet("border: 0px solid black;")
-            self.user_access_label.clear()
+            self.clear_user_info()
         else:
             self.camera.open(0)
             self.timer.timeout.connect(self.qr_capture)
@@ -390,8 +398,6 @@ class QrFaceRecognition(QWidget):
                         return
                     self.user_access_label.setText("Acesso negado!")
                     self.user_access_label.setStyleSheet("color: red;")
-                    # self.user_info_label.setStyleSheet(
-                    #     "border: 3px solid red;")
                     # Exibir a mensagem e o conteúdo do QR Code com um
                     # fundo vermelho
                     cv2.rectangle(img, (20, 20), (440, 80), (0, 0, 144), -1)
@@ -399,24 +405,7 @@ class QrFaceRecognition(QWidget):
                                 cv2.FONT_HERSHEY_SIMPLEX, 1,
                                 (255, 255, 255), 2)
                     # Limpar as informações do usuário
-                    self.user_access_label.clear()
-                    self.user_access_label.setStyleSheet(
-                        "border: 0px solid black;")
-                    self.user_photo_label.clear()
-                    self.user_photo_label.setStyleSheet(
-                        "border: 0px solid black;")
-                    self.user_name_label.clear()
-                    self.user_name_label.setStyleSheet(
-                        "border: 0px solid black;")
-                    self.user_cpf_label.clear()
-                    self.user_cpf_label.setStyleSheet(
-                        "border: 0px solid black;")
-                    self.user_qr_code_label.clear()
-                    self.user_qr_code_label.setStyleSheet(
-                        "border: 0px solid black;")
-                    self.user_info_label.setStyleSheet(
-                        "border: 0px solid black;")
-                    self.user_access_label.clear()
+                    self.clear_user_info()
                     for barcode in barcodes:
                         if not self.cam_power:
                             return
@@ -536,20 +525,25 @@ class QrFaceRecognition(QWidget):
                             "border: 3px solid black;")
                         # Registrar no banco de dados
                         connection = self.connect_postgres()
-                        # gerar um uuid
-                        uuid = str(uuid4())
-
-                        cursor = connection.cursor()
-                        cursor.execute("INSERT INTO attendances(" +
-                                       "id_attendance, id_employee," +
-                                       "valid, qr_code,face_photo) " +
-                                       "VALUES ( %s, %s, %s, %s, %s)",
-                                       (uuid, label, True,
-                                        self.all_users_names[label][2],
-                                        self.all_users_names[label][4],))
-                        connection.commit()
-                        cursor.close()
-                        connection.close()
+                        if connection:
+                            # gerar um uuid
+                            uuid = str(uuid4())
+                            cursor = connection.cursor()
+                            cursor.execute("INSERT INTO attendances(" +
+                                           "id_attendance, id_employee," +
+                                           "valid, qr_code,face_photo) " +
+                                           "VALUES ( %s, %s, %s, %s, %s)",
+                                           (uuid, label, True,
+                                            self.all_users_names[label][2],
+                                            self.all_users_names[label][4],))
+                            connection.commit()
+                            cursor.close()
+                            connection.close()
+                        else:
+                            self.show_message_box(
+                                "Erro ao salvar registro no banco de dados!" +
+                                "\nUsuário e/ou senha incorretos." +
+                                "\nVerifique se o PostgreSQL está rodando.")
                         cv2.waitKey(3000)
                         self.timer.stop()
                         # desconectar timer
@@ -600,8 +594,7 @@ class QrFaceRecognition(QWidget):
 
                         self.no_face_counter += 1
                         # Verificar se o contador de loops sem rosto
-                        # correspondente
-                        # ao qr code ultrapassou o limite máximo
+                        # correspondente ao qr code ultrapassou o limite máximo
                         MAX_NO_FACE_COUNT = 15
                         if self.no_face_counter > MAX_NO_FACE_COUNT:
                             # Registrar no banco de dados
@@ -620,8 +613,7 @@ class QrFaceRecognition(QWidget):
                             cursor.close()
                             connection.close()
                             # Rosto não detectado por muito tempo, voltar
-                            # para a
-                            # captura do qr code
+                            # para a captura do qr code
                             self.timer.stop()
                             # desconectar timer
                             self.timer.timeout.disconnect(self.face_capture)

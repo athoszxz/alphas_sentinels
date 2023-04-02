@@ -2,7 +2,7 @@ from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLabel, QLineEdit, \
     QDateEdit, QPushButton, QMessageBox, QHBoxLayout
 from PyQt6.QtGui import QPixmap, QImage
 import cv2
-from PyQt6 import QtCore
+from PyQt6 import QtCore, QtGui
 import uuid
 import os
 import psycopg2
@@ -34,14 +34,22 @@ class RegisterForm(QWidget):
         # Nome
         self.first_name_label = QLabel("Nome", self)
         self.first_name_textbox = QLineEdit(self)
+        # Só aceita letras, espaços, acentos e hífen
+        self.first_name_textbox.setValidator(
+            QtGui.QRegularExpressionValidator(
+                QtCore.QRegularExpression("[A-Za-zÀ-ú ]+")))
+
         # Diminui o tamanho da caixa de texto e da label
         self.first_name_label.setFixedWidth(200)
         self.first_name_textbox.setFixedWidth(200)
 
         # Sobrenome
         self.last_name_label = QLabel("Sobrenome", self)
-
         self.last_name_textbox = QLineEdit(self)
+        # Só aceita letras, espaços, acentos e hífen
+        self.last_name_textbox.setValidator(
+            QtGui.QRegularExpressionValidator(
+                QtCore.QRegularExpression("[A-Za-zÀ-ú ]+")))
 
         # Diminui o tamanho da caixa de texto e da label
         self.last_name_label.setFixedWidth(200)
@@ -49,8 +57,10 @@ class RegisterForm(QWidget):
 
         # CPF
         self.cpf_label = QLabel("CPF", self)
-
         self.cpf_textbox = QLineEdit(self)
+        # Só aceita números
+        self.cpf_textbox.setValidator(QtGui.QRegularExpressionValidator(
+            QtCore.QRegularExpression(r'^\d{0,11}$')))
 
         # Diminui o tamanho da caixa de texto e da label
         self.cpf_label.setFixedWidth(200)
@@ -58,8 +68,9 @@ class RegisterForm(QWidget):
 
         # Data de nascimento
         self.date_label = QLabel("Data de nascimento", self)
-
         self.date_input_textbox = QDateEdit(self)
+        self.date_input_textbox.setDisplayFormat("dd/MM/yyyy")
+        self.date_input_textbox.setCalendarPopup(True)
 
         # Diminui o tamanho da caixa de texto e da label
         self.date_label.setFixedWidth(200)
@@ -138,6 +149,19 @@ class RegisterForm(QWidget):
         self.setLayout(form_v_layout)
 
     def submit_data(self):
+        if self.first_name_textbox.text() == '' or \
+            self.last_name_textbox.text() == '' or \
+                self.cpf_textbox.text() == '' or \
+                self.total_images < 6:
+            # Show error message box
+            msg = QMessageBox()
+            msg.setText("Erro")
+            msg.setInformativeText(
+                "Por favor, preencha todos os campos obrigatórios.")
+            msg.setWindowTitle("Erro")
+            msg.exec()
+            return
+
         # Gerar um ID único para o usuário
         user_id = uuid.uuid4()
         # Pegar os valores dos campos
