@@ -2,27 +2,28 @@ from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLabel, QLineEdit, \
     QDateEdit, QPushButton, QMessageBox, QHBoxLayout
 from PyQt6.QtGui import QPixmap, QImage
 import cv2
-from PyQt6 import QtCore
+from PyQt6 import QtCore, QtGui
 import uuid
 import os
 import psycopg2
 import io
 import qrcode
+from typing import List
 
 
 class RegisterForm(QWidget):
-    def __init__(self, user_postgresql, password_postgresql):
+    def __init__(self, user_postgresql: str, password_postgresql: str) -> None:
         super().__init__()
-        self.user_postgresql = user_postgresql
-        self.password_postgresql = password_postgresql
-        self.image_1 = QLabel(self)
+        self.user_postgresql: str = user_postgresql
+        self.password_postgresql: str = password_postgresql
+        self.image_1: QLabel = QLabel(self)
         self.image_2 = QLabel(self)
         self.image_3 = QLabel(self)
         self.image_4 = QLabel(self)
         self.image_5 = QLabel(self)
         self.image_6 = QLabel(self)
-        self.total_images = 0
-        self.photos = []
+        self.total_images: int = 0
+        self.photos: List[QLabel] = []
         self.initUI()
 
     def initUI(self):
@@ -34,14 +35,22 @@ class RegisterForm(QWidget):
         # Nome
         self.first_name_label = QLabel("Nome", self)
         self.first_name_textbox = QLineEdit(self)
+        # Só aceita letras, espaços, acentos e hífen
+        self.first_name_textbox.setValidator(
+            QtGui.QRegularExpressionValidator(
+                QtCore.QRegularExpression("[A-Za-zÀ-ú ]+")))
+
         # Diminui o tamanho da caixa de texto e da label
         self.first_name_label.setFixedWidth(200)
         self.first_name_textbox.setFixedWidth(200)
 
         # Sobrenome
         self.last_name_label = QLabel("Sobrenome", self)
-
         self.last_name_textbox = QLineEdit(self)
+        # Só aceita letras, espaços, acentos e hífen
+        self.last_name_textbox.setValidator(
+            QtGui.QRegularExpressionValidator(
+                QtCore.QRegularExpression("[A-Za-zÀ-ú ]+")))
 
         # Diminui o tamanho da caixa de texto e da label
         self.last_name_label.setFixedWidth(200)
@@ -49,8 +58,10 @@ class RegisterForm(QWidget):
 
         # CPF
         self.cpf_label = QLabel("CPF", self)
-
         self.cpf_textbox = QLineEdit(self)
+        # Só aceita números
+        self.cpf_textbox.setValidator(QtGui.QRegularExpressionValidator(
+            QtCore.QRegularExpression(r'^\d{0,11}$')))
 
         # Diminui o tamanho da caixa de texto e da label
         self.cpf_label.setFixedWidth(200)
@@ -58,8 +69,9 @@ class RegisterForm(QWidget):
 
         # Data de nascimento
         self.date_label = QLabel("Data de nascimento", self)
-
         self.date_input_textbox = QDateEdit(self)
+        self.date_input_textbox.setDisplayFormat("dd/MM/yyyy")
+        self.date_input_textbox.setCalendarPopup(True)
 
         # Diminui o tamanho da caixa de texto e da label
         self.date_label.setFixedWidth(200)
@@ -138,13 +150,26 @@ class RegisterForm(QWidget):
         self.setLayout(form_v_layout)
 
     def submit_data(self):
+        if self.first_name_textbox.text() == '' or \
+            self.last_name_textbox.text() == '' or \
+                self.cpf_textbox.text() == '' or \
+                self.total_images < 6:
+            # Show error message box
+            msg = QMessageBox()
+            msg.setText("Erro")
+            msg.setInformativeText(
+                "Por favor, preencha todos os campos obrigatórios.")
+            msg.setWindowTitle("Erro")
+            msg.exec()
+            return
+
         # Gerar um ID único para o usuário
-        user_id = uuid.uuid4()
+        user_id: str = str(uuid.uuid4())
         # Pegar os valores dos campos
-        first_name = self.first_name_textbox.text()
-        last_name = self.last_name_textbox.text()
-        cpf = self.cpf_textbox.text()
-        date = self.date_input_textbox.text()
+        first_name: str = self.first_name_textbox.text()
+        last_name: str = self.last_name_textbox.text()
+        cpf: str = self.cpf_textbox.text()
+        date: str = self.date_input_textbox.text()
         qrcode = self.generate_qrcode(user_id)
 
         # Conectar ao banco de dados

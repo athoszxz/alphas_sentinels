@@ -10,7 +10,7 @@ from PyQt6.QtGui import QPixmap, QImage, QFont
 from PyQt6 import QtCore
 import psycopg2
 import os
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Union
 
 
 class QrFaceRecognition(QWidget):
@@ -139,8 +139,6 @@ class QrFaceRecognition(QWidget):
         self.user_info_label = QLabel(self)
         # Define o tamanho da label
         self.user_info_label.setFixedSize(300, 450)
-        # Adiciona bordas à label
-        # self.user_info_label.setStyleSheet("border: 3px solid black;")
         # Adiciona a label ao layout
         user_info_v_layout.addWidget(
             self.user_info_label,
@@ -193,6 +191,23 @@ class QrFaceRecognition(QWidget):
         self.timer = QtCore.QTimer()
         self.timer.timeout.connect(self.qr_capture)
 
+    def connect_postgres(self) -> Union[psycopg2.extensions.connection, bool]:
+        try:
+            connection = psycopg2.connect(host="localhost",
+                                          database="db_alphas_" +
+                                          "sentinels_2023_144325",
+                                          user=self.user_postgresql,
+                                          password=self.password_postgresql)
+            return connection
+        except (Exception, psycopg2.Error, psycopg2.OperationalError):
+            # Verificar se o arquivo data.txt existe e excluí-lo
+            if os.path.exists("data.txt"):
+                os.remove("data.txt")
+            self.show_message_box("Erro ao conectar ao banco de dados!" +
+                                  "\nUsuário e/ou senha incorretos." +
+                                  "\nVerifique se o PostgreSQL está rodando.")
+            return False
+
     # Método que verifica se o arquivo face_model5.pkl existe dentro da pasta
     # training, se não existir, desabilita o botão de ligar a câmera e exibe
     # uma mensagem de erro "Modelo não encontrado" em vermelho
@@ -211,46 +226,51 @@ class QrFaceRecognition(QWidget):
 
     # Método para pegar todos os ids dos usuários
     def get_all_users_ids(self):
-        try:
-            connection = psycopg2.connect(host="localhost",
-                                          database="db_alphas_" +
-                                          "sentinels_2023_144325",
-                                          user=self.user_postgresql,
-                                          password=self.password_postgresql)
-        except (Exception, psycopg2.Error, psycopg2.OperationalError):
-            # Verificar se o arquivo data.txt existe e excluí-lo
-            if os.path.exists("data.txt"):
-                os.remove("data.txt")
+        connection = self.connect_postgres()
+        if connection:
+            cursor = connection.cursor()
+            cursor.execute("SELECT id_employee from employees")
+            self.all_users_ids = cursor.fetchall()
+
+            cursor.execute(
+                "SELECT e.id_employee, e.first_name, e.last_name, e.qr_code," +
+                " e.cpf, p.photo " +
+                "FROM employees e JOIN photos p ON e.id_employee = " +
+                "p.id_employee "
+                + "WHERE p.id_photo = (SELECT MIN(id_photo) FROM photos " +
+                "WHERE id_employee = e.id_employee)")
+            # Transformar a lista de tuplas com 3 elementos
+            # em um dicionário onde a chave é o id do usuário
+            # e o valor é uma lista com o nome, sobrenome, qr_code, cpf e foto
+            results = cursor.fetchall()
+            for row in results:
+                id_employee = row[0]
+                first_name = row[1]
+                last_name = row[2]
+                qr_code = row[3]
+                cpf = row[4]
+                photo = row[5]
+                self.all_users_names[id_employee] = (first_name, last_name,
+                                                     qr_code, cpf, photo)
+            connection.close()
+        else:
             self.show_message_box("Erro ao conectar ao banco de dados!" +
                                   "\nUsuário e/ou senha incorretos." +
                                   "\nVerifique se o PostgreSQL está rodando.")
-            return False
 
-        cursor = connection.cursor()
-        cursor.execute("SELECT id_employee from employees")
-        self.all_users_ids = cursor.fetchall()
-
-        cursor.execute(
-            "SELECT e.id_employee, e.first_name, e.last_name, e.qr_code," +
-            " e.cpf, p.photo " +
-            "FROM employees e JOIN photos p ON e.id_employee = p.id_employee "
-            + "WHERE p.id_photo = (SELECT MIN(id_photo) FROM photos " +
-            "WHERE id_employee = e.id_employee)")
-        # Transformar a lista de tuplas com 3 elementos
-        # em um dicionário onde a chave é o id do usuário
-        # e o valor é uma lista com o nome e sobrenome do usuário
-        results = cursor.fetchall()
-        for row in results:
-            id_employee = row[0]
-            first_name = row[1]
-            last_name = row[2]
-            qr_code = row[3]
-            cpf = row[4]
-            photo = row[5]
-            self.all_users_names[id_employee] = (first_name, last_name,
-                                                 qr_code, cpf, photo)
-        connection.close()
-        return True
+    # Método para limpar as informações do usuário
+    def clear_user_info(self):
+        self.user_access_label.clear()
+        self.user_access_label.setStyleSheet("border: 0px solid black;")
+        self.user_photo_label.clear()
+        self.user_photo_label.setStyleSheet("border: 0px solid black;")
+        self.user_name_label.clear()
+        self.user_name_label.setStyleSheet("border: 0px solid black;")
+        self.user_cpf_label.clear()
+        self.user_cpf_label.setStyleSheet("border: 0px solid black;")
+        self.user_qr_code_label.clear()
+        self.user_qr_code_label.setStyleSheet("border: 0px solid black;")
+        self.user_info_label.setStyleSheet("border: 0px solid black;")
 
     # Método para iniciar e parar a câmera
     def toggle_camera(self) -> None:
@@ -262,18 +282,7 @@ class QrFaceRecognition(QWidget):
             self.cam_power_button.setText('Iniciar')
             self.video_label.clear()
             # Limpar as informações do usuário
-            self.user_access_label.clear()
-            self.user_access_label.setStyleSheet("border: 0px solid black;")
-            self.user_photo_label.clear()
-            self.user_photo_label.setStyleSheet("border: 0px solid black;")
-            self.user_name_label.clear()
-            self.user_name_label.setStyleSheet("border: 0px solid black;")
-            self.user_cpf_label.clear()
-            self.user_cpf_label.setStyleSheet("border: 0px solid black;")
-            self.user_qr_code_label.clear()
-            self.user_qr_code_label.setStyleSheet("border: 0px solid black;")
-            self.user_info_label.setStyleSheet("border: 0px solid black;")
-            self.user_access_label.clear()
+            self.clear_user_info()
         else:
             self.camera.open(0)
             self.timer.timeout.connect(self.qr_capture)
@@ -389,14 +398,14 @@ class QrFaceRecognition(QWidget):
                         return
                     self.user_access_label.setText("Acesso negado!")
                     self.user_access_label.setStyleSheet("color: red;")
-                    # self.user_info_label.setStyleSheet(
-                    #     "border: 3px solid red;")
                     # Exibir a mensagem e o conteúdo do QR Code com um
                     # fundo vermelho
                     cv2.rectangle(img, (20, 20), (440, 80), (0, 0, 144), -1)
                     cv2.putText(img, "QR Code Desconhecido!", (60, 60),
                                 cv2.FONT_HERSHEY_SIMPLEX, 1,
                                 (255, 255, 255), 2)
+                    # Limpar as informações do usuário
+                    self.clear_user_info()
                     for barcode in barcodes:
                         if not self.cam_power:
                             return
@@ -515,38 +524,26 @@ class QrFaceRecognition(QWidget):
                         self.user_qr_code_label.setStyleSheet(
                             "border: 3px solid black;")
                         # Registrar no banco de dados
-                        try:
-                            connection = psycopg2.connect(
-                                host="localhost",
-                                database="db_alphas_" +
-                                "sentinels_2023_144325",
-                                user=self.user_postgresql,
-                                password=self.password_postgresql)
-                        except (Exception, psycopg2.Error,
-                                psycopg2.OperationalError):
-                            # Verificar se o arquivo data.txt existe
-                            # e excluí-lo
-                            if os.path.exists("data.txt"):
-                                os.remove("data.txt")
+                        connection = self.connect_postgres()
+                        if connection:
+                            # gerar um uuid
+                            uuid = str(uuid4())
+                            cursor = connection.cursor()
+                            cursor.execute("INSERT INTO attendances(" +
+                                           "id_attendance, id_employee," +
+                                           "valid, qr_code,face_photo) " +
+                                           "VALUES ( %s, %s, %s, %s, %s)",
+                                           (uuid, label, True,
+                                            self.all_users_names[label][2],
+                                            self.all_users_names[label][4],))
+                            connection.commit()
+                            cursor.close()
+                            connection.close()
+                        else:
                             self.show_message_box(
-                                "Erro ao conectar ao banco de dados!" +
+                                "Erro ao salvar registro no banco de dados!" +
                                 "\nUsuário e/ou senha incorretos." +
                                 "\nVerifique se o PostgreSQL está rodando.")
-                            return False
-                        # gerar um uuid
-                        uuid = str(uuid4())
-
-                        cursor = connection.cursor()
-                        cursor.execute("INSERT INTO attendances(" +
-                                       "id_attendance, id_employee," +
-                                       "valid, qr_code,face_photo) " +
-                                       "VALUES ( %s, %s, %s, %s, %s)",
-                                       (uuid, label, True,
-                                        self.all_users_names[label][2],
-                                        self.all_users_names[label][4],))
-                        connection.commit()
-                        cursor.close()
-                        connection.close()
                         cv2.waitKey(3000)
                         self.timer.stop()
                         # desconectar timer
@@ -597,31 +594,11 @@ class QrFaceRecognition(QWidget):
 
                         self.no_face_counter += 1
                         # Verificar se o contador de loops sem rosto
-                        # correspondente
-                        # ao qr code ultrapassou o limite máximo
+                        # correspondente ao qr code ultrapassou o limite máximo
                         MAX_NO_FACE_COUNT = 15
                         if self.no_face_counter > MAX_NO_FACE_COUNT:
                             # Registrar no banco de dados
-                            try:
-                                connection = psycopg2.connect(
-                                    host="localhost",
-                                    database="db_alphas_" +
-                                    "sentinels_2023_144325",
-                                    user=self.user_postgresql,
-                                    password=self.password_postgresql)
-                            except (Exception, psycopg2.Error,
-                                    psycopg2.OperationalError):
-                                # Verificar se o arquivo data.txt existe
-                                # e excluí-lo
-                                if os.path.exists("data.txt"):
-                                    os.remove("data.txt")
-                                self.show_message_box(
-                                    "Erro ao conectar ao banco de dados!" +
-                                    "\nUsuário e/ou senha incorretos." +
-                                    "\nVerifique se o PostgreSQL está rodando."
-                                )
-                                return False
-
+                            connection = self.connect_postgres()
                             uuid = str(uuid4())
 
                             cursor = connection.cursor()
@@ -636,8 +613,7 @@ class QrFaceRecognition(QWidget):
                             cursor.close()
                             connection.close()
                             # Rosto não detectado por muito tempo, voltar
-                            # para a
-                            # captura do qr code
+                            # para a captura do qr code
                             self.timer.stop()
                             # desconectar timer
                             self.timer.timeout.disconnect(self.face_capture)

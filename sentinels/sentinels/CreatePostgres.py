@@ -4,9 +4,9 @@ from PyQt6.QtWidgets import QMessageBox
 
 
 class CreatePostgres:
-    def __init__(self, user_postgresql, password_postgresql):
-        self.user_postgresql = user_postgresql
-        self.password_postgresql = password_postgresql
+    def __init__(self, user_postgresql: str, password_postgresql: str):
+        self.user_postgresql: str = user_postgresql
+        self.password_postgresql: str = password_postgresql
 
     def create(self):
         print("Database 'db_alphas_sentinels_2023_144325' não " +
