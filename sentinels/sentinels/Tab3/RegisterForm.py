@@ -8,21 +8,22 @@ import os
 import psycopg2
 import io
 import qrcode
+from typing import List
 
 
 class RegisterForm(QWidget):
-    def __init__(self, user_postgresql, password_postgresql):
+    def __init__(self, user_postgresql: str, password_postgresql: str) -> None:
         super().__init__()
-        self.user_postgresql = user_postgresql
-        self.password_postgresql = password_postgresql
-        self.image_1 = QLabel(self)
+        self.user_postgresql: str = user_postgresql
+        self.password_postgresql: str = password_postgresql
+        self.image_1: QLabel = QLabel(self)
         self.image_2 = QLabel(self)
         self.image_3 = QLabel(self)
         self.image_4 = QLabel(self)
         self.image_5 = QLabel(self)
         self.image_6 = QLabel(self)
-        self.total_images = 0
-        self.photos = []
+        self.total_images: int = 0
+        self.photos: List[QLabel] = []
         self.initUI()
 
     def initUI(self):
@@ -163,12 +164,12 @@ class RegisterForm(QWidget):
             return
 
         # Gerar um ID único para o usuário
-        user_id = uuid.uuid4()
+        user_id: str = str(uuid.uuid4())
         # Pegar os valores dos campos
-        first_name = self.first_name_textbox.text()
-        last_name = self.last_name_textbox.text()
-        cpf = self.cpf_textbox.text()
-        date = self.date_input_textbox.text()
+        first_name: str = self.first_name_textbox.text()
+        last_name: str = self.last_name_textbox.text()
+        cpf: str = self.cpf_textbox.text()
+        date: str = self.date_input_textbox.text()
         qrcode = self.generate_qrcode(user_id)
 
         # Conectar ao banco de dados

@@ -10,19 +10,20 @@ import sys
 import psycopg2
 import dlib
 import pickle
+from typing import List
 
 
 class RegisterCam(QWidget):
-    def __init__(self, cap, register_form,
-                 user_postgresql, password_postgresql):
+    def __init__(self, cap: cv2.VideoCapture, register_form: QWidget,
+                 user_postgresql: str, password_postgresql: str) -> None:
         super().__init__()
-        self.user_postgresql = user_postgresql
-        self.password_postgresql = password_postgresql
-        self.cap = cap
+        self.user_postgresql: str = user_postgresql
+        self.password_postgresql: str = password_postgresql
+        self.cap: cv2.VideoCapture = cap
         self.register_form = register_form
-        self.timer = QTimer(self)
-        self.total_images = 0
-        self.photos = []
+        self.timer: QTimer = QTimer()
+        self.total_images: int = 0
+        self.photos: List = []
         self.initUI()
 
     def initUI(self):

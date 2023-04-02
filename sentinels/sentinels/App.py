@@ -1,5 +1,4 @@
 from PyQt6.QtWidgets import QWidget, QTabWidget, QVBoxLayout
-# from Tab1.Tab1AllCams import Tab1AllCams
 from Tab2.Tab2Recognition import Tab2Recognition
 from Tab3.Tab3Register import Tab3Register
 from Tab4.Tab4Card import Tab4Card
