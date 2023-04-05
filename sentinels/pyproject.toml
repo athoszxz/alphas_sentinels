@@ -17,6 +17,7 @@ scipy = "^1.10.1"
 dlib = "^19.24.1"
 pyinstaller = "^5.9.0"
 pyzbar = "^0.1.9"
+pymongo = "^4.3.3"
 
 
 [build-system]
