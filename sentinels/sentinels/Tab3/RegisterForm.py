@@ -4,11 +4,11 @@ from PyQt6.QtGui import QPixmap, QImage
 import cv2
 from PyQt6 import QtCore, QtGui
 import uuid
-import os
 import psycopg2
 import io
 import qrcode
 from typing import List
+from DataBase import DataBase
 
 
 class RegisterForm(QWidget):
@@ -164,51 +164,37 @@ class RegisterForm(QWidget):
             return
 
         # Gerar um ID único para o usuário
-        user_id: str = str(uuid.uuid4())
+        user_id = (uuid.uuid4())
         # Pegar os valores dos campos
-        first_name: str = self.first_name_textbox.text()
-        last_name: str = self.last_name_textbox.text()
-        cpf: str = self.cpf_textbox.text()
-        date: str = self.date_input_textbox.text()
+        first_name = self.first_name_textbox.text()
+        last_name = self.last_name_textbox.text()
+        cpf = self.cpf_textbox.text()
+        date = self.date_input_textbox.text()
         qrcode = self.generate_qrcode(user_id)
 
-        # Conectar ao banco de dados
-        try:
-            connection = psycopg2.connect(host="localhost",
-                                          database="db_alphas_" +
-                                          "sentinels_2023_144325",
-                                          user=self.user_postgresql,
-                                          password=self.password_postgresql)
-        except (Exception, psycopg2.Error, psycopg2.OperationalError):
-            # Verificar se o arquivo data.txt existe e excluí-lo
-            if os.path.exists("data.txt"):
-                os.remove("data.txt")
-            self.show_message_box("Erro ao conectar ao banco de dados!" +
-                                  "\nUsuário e/ou senha incorretos." +
-                                  "\nVerifique se o PostgreSQL está rodando.")
-            return False
-        cursor = connection.cursor()
-
-        # Inserir os dados no banco de dados
-        cursor.execute('INSERT INTO employees ' +
-                       '(id_employee, first_name, '
-                       + 'last_name, cpf, birth_date, qr_code) '
-                       'VALUES (%s, %s, %s, %s, %s, %s)',
-                       (str(user_id), str(first_name), last_name, int(cpf),
-                        date, psycopg2.Binary(qrcode)))
+        database = DataBase("db_alphas_sentinels_2023_144325",
+                            self.user_postgresql,
+                            self.password_postgresql)
+        database.connect(self)
+        database.create(self, "employees",
+                        "id_employee, first_name, last_name," +
+                        " cpf, birth_date, qr_code",
+                        [str(user_id), str(first_name), last_name, int(cpf),
+                         date, psycopg2.Binary(qrcode)])
 
         # Inserir as fotos no banco de dados
         for i in range(self.total_images):
             # Converter a imagem para bytes já que estava em formato QImage
             _, buffer = cv2.imencode('.jpg', self.photos[i])
 
-        cursor.execute('INSERT INTO photos (id_photo, id_employee, photo) '
-                       + 'VALUES (%s, %s, %s)',
-                       (str(uuid.uuid4()), str(user_id),
-                         psycopg2.Binary(buffer.tobytes())))
+            database.create(self, "photos", "id_photo, id_employee, photo",
+                            (str(uuid.uuid4()), str(user_id),
+                             psycopg2.Binary(buffer.tobytes())))
 
-        connection.commit()
-        connection.close()
+        # Salvar as alterações
+        database.commit()
+        database.close()
+
         self.show_message_box("Dados enviados com sucesso!")
 
         # Limpar os campos
