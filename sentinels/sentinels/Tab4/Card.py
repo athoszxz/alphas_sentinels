@@ -7,8 +7,9 @@ from PyQt6 import QtCore
 
 
 class Card(QWidget):
-    def __init__(self, user_postgresql, password_postgresql):
+    def __init__(self, port, user_postgresql, password_postgresql):
         super().__init__()
+        self.port = port
         self.user_postgresql = user_postgresql
         self.password_postgresql = password_postgresql
         self.initUI()
@@ -113,6 +114,7 @@ class Card(QWidget):
         # Conectar ao banco de dados
         try:
             connection = psycopg2.connect(host="localhost",
+                                          port=self.port,
                                           database="db_alphas_" +
                                           "sentinels_2023_144325",
                                           user=self.user_postgresql,

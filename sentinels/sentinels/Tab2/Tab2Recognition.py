@@ -8,9 +8,11 @@ import os
 
 
 class Tab2Recognition(QWidget):
-    def __init__(self, user_postgresql: str, password_postgresql: str,
+    def __init__(self, port_postgresql: str, user_postgresql: str,
+                 password_postgresql: str,
                  cap: cv2.VideoCapture) -> None:
         super().__init__()
+        self.port_postgresql: str = port_postgresql
         self.user_postgresql: str = user_postgresql
         self.password_postgresql: str = password_postgresql
         self.cap: cv2.VideoCapture = cap
@@ -67,6 +69,7 @@ class Tab2Recognition(QWidget):
 
         # Adiciona o QrFaceRecognition
         self.qr_face_recognition = QrFaceRecognition(
+            self.port_postgresql,
             self.descriptors, self.sp, self.facerec,
             self.face_cascade, self.user_postgresql, self.password_postgresql)
 

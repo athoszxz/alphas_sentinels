@@ -11,14 +11,17 @@ from PyQt6 import QtCore
 import psycopg2
 import os
 from typing import List, Dict, Tuple, Union
+from DataBase import DataBase
 
 
 class QrFaceRecognition(QWidget):
-    def __init__(self, descriptors: List, sp: object, facerec: object,
+    def __init__(self, port_postgresql: str, descriptors: List,
+                 sp: object, facerec: object,
                  face_cascade: object, user_postgresql: str,
                  password_postgresql: str) -> None:
         super().__init__()
         # Conexão com o banco de dados
+        self.port_postgresql: str = port_postgresql
         self.user_postgresql: str = user_postgresql
         self.password_postgresql: str = password_postgresql
 
@@ -194,6 +197,7 @@ class QrFaceRecognition(QWidget):
     def connect_postgres(self) -> Union[psycopg2.extensions.connection, bool]:
         try:
             connection = psycopg2.connect(host="localhost",
+                                          port=self.port_postgresql,
                                           database="db_alphas_" +
                                           "sentinels_2023_144325",
                                           user=self.user_postgresql,
@@ -226,7 +230,12 @@ class QrFaceRecognition(QWidget):
 
     # Método para pegar todos os ids dos usuários
     def get_all_users_ids(self):
-        connection = self.connect_postgres()
+        database = DataBase(self.port_postgresql,
+                            "db_alphas_sentinels_2023_144325",
+                            self.user_postgresql,
+                            self.password_postgresql)
+        database.connect(self)
+        connection = database.connection
         if connection:
             cursor = connection.cursor()
             cursor.execute("SELECT id_employee from employees")
@@ -396,8 +405,6 @@ class QrFaceRecognition(QWidget):
                 else:
                     if not self.cam_power:
                         return
-                    self.user_access_label.setText("Acesso negado!")
-                    self.user_access_label.setStyleSheet("color: red;")
                     # Exibir a mensagem e o conteúdo do QR Code com um
                     # fundo vermelho
                     cv2.rectangle(img, (20, 20), (440, 80), (0, 0, 144), -1)
@@ -406,6 +413,8 @@ class QrFaceRecognition(QWidget):
                                 (255, 255, 255), 2)
                     # Limpar as informações do usuário
                     self.clear_user_info()
+                    self.user_access_label.setText("Qr Code Desconhecido!")
+                    self.user_access_label.setStyleSheet("color: red;")
                     for barcode in barcodes:
                         if not self.cam_power:
                             return
@@ -523,27 +532,27 @@ class QrFaceRecognition(QWidget):
                             "background-color: white;")
                         self.user_qr_code_label.setStyleSheet(
                             "border: 3px solid black;")
+
                         # Registrar no banco de dados
-                        connection = self.connect_postgres()
-                        if connection:
-                            # gerar um uuid
-                            uuid = str(uuid4())
-                            cursor = connection.cursor()
-                            cursor.execute("INSERT INTO attendances(" +
-                                           "id_attendance, id_employee," +
-                                           "valid, qr_code,face_photo) " +
-                                           "VALUES ( %s, %s, %s, %s, %s)",
-                                           (uuid, label, True,
-                                            self.all_users_names[label][2],
-                                            self.all_users_names[label][4],))
-                            connection.commit()
-                            cursor.close()
-                            connection.close()
-                        else:
-                            self.show_message_box(
-                                "Erro ao salvar registro no banco de dados!" +
-                                "\nUsuário e/ou senha incorretos." +
-                                "\nVerifique se o PostgreSQL está rodando.")
+
+                        # gerar um uuid
+                        uuid = str(uuid4())
+
+                        database = DataBase(
+                            self.port_postgresql,
+                            "db_alphas_sentinels_2023_144325",
+                            self.user_postgresql,
+                            self.password_postgresql)
+                        database.connect(self)
+                        database.create(self, "attendances", "id_attendance," +
+                                        "id_employee, valid, qr_code," +
+                                        "face_photo",
+                                        [uuid, label, True,
+                                         self.all_users_names[label][2],
+                                            self.all_users_names[label][4]])
+                        database.commit()
+                        database.close()
+                        database.disconnect()
                         cv2.waitKey(3000)
                         self.timer.stop()
                         # desconectar timer
@@ -598,20 +607,23 @@ class QrFaceRecognition(QWidget):
                         MAX_NO_FACE_COUNT = 15
                         if self.no_face_counter > MAX_NO_FACE_COUNT:
                             # Registrar no banco de dados
-                            connection = self.connect_postgres()
+                            database = DataBase(
+                                self.port_postgresql,
+                                "db_alphas_sentinels_2023_144325",
+                                self.user_postgresql,
+                                self.password_postgresql)
                             uuid = str(uuid4())
-
-                            cursor = connection.cursor()
-                            cursor.execute("INSERT INTO attendances(" +
-                                           "id_attendance, id_employee," +
-                                           "valid, qr_code,face_photo) " +
-                                           "VALUES ( %s, %s, %s, %s, %s)",
-                                           (uuid, label, False,
-                                            self.all_users_names[label][2],
-                                            self.all_users_names[label][4],))
-                            connection.commit()
-                            cursor.close()
-                            connection.close()
+                            database.connect(self)
+                            database.create(self, "attendances",
+                                            "id_attendance," +
+                                            "id_employee, valid, qr_code," +
+                                            "face_photo",
+                                            [uuid, label, False,
+                                             self.all_users_names[label][2],
+                                             self.all_users_names[label][4]])
+                            database.commit()
+                            database.close()
+                            database.disconnect()
                             # Rosto não detectado por muito tempo, voltar
                             # para a captura do qr code
                             self.timer.stop()
