@@ -6,21 +6,18 @@ import cv2
 
 
 class App(QWidget):
-    def __init__(self, user="", password=""):
+    def __init__(self, port: str = "", user: str = "", password: str = ""):
         super().__init__()
-        self.title = "Alpha's Sentinels"
-        self.left = 500
-        self.top = 200
-        self.width = 960
-        self.height = 760
-        self.user_postgresql = user
-        self.password_postgresql = password
-        self.cap = cv2.VideoCapture(0)
+        self.title: str = "Alpha's Sentinels"
+        self.port_postgresql: str = port
+        self.user_postgresql: str = user
+        self.password_postgresql: str = password
+        self.cap: cv2.VideoCapture = cv2.VideoCapture(0)
         self.initUI()
 
     def initUI(self):
         self.setWindowTitle(self.title)
-        self.setGeometry(self.left, self.top, self.width, self.height)
+        self.setGeometry(500, 200, 960, 760)
         self.cap.release()
         # cria o widget de abas
         tabs = QTabWidget()
@@ -28,12 +25,15 @@ class App(QWidget):
         # cria as abas
         # tab1 = Tab1AllCams(
         #     self.user_postgresql, self.password_postgresql, self.cap)
-        tab2 = Tab2Recognition(
-            self.user_postgresql, self.password_postgresql, self.cap)
-        tab3 = Tab3Register(
-            self.user_postgresql, self.password_postgresql, self.cap)
-        tab4 = Tab4Card(
-            self.user_postgresql, self.password_postgresql, self.cap)
+        tab2 = Tab2Recognition(self.port_postgresql,
+                               self.user_postgresql, self.password_postgresql,
+                               self.cap)
+        tab3 = Tab3Register(self.port_postgresql,
+                            self.user_postgresql, self.password_postgresql,
+                            self.cap)
+        tab4 = Tab4Card(self.port_postgresql,
+                        self.user_postgresql, self.password_postgresql,
+                        self.cap)
 
         # adiciona as abas ao widget de abas
         # tabs.addTab(tab1, "Todas as câmeras")
@@ -55,6 +55,6 @@ class App(QWidget):
 
         self.show()
 
-    def closeEvent(self, event):
+    def closeEvent(self, event) -> None:
         self.cap.release()
         event.accept()

@@ -7,12 +7,13 @@ from typing import List, Union, Dict, Any, Optional, Tuple
 
 
 class DataBase:
-    def __init__(self, dbname: str, user: str, password: str,
+    def __init__(self, port: str, dbname: str, user: str, password: str,
                  host: str = 'localhost'):
         self.dbname: str = dbname
         self.user: str = user
         self.password: str = password
         self.host: str = host
+        self.port: str = port
         self.connection: psycopg2.extensions.connection = None
 
     def connect(self, instance: QMessageBox) -> None:
@@ -20,6 +21,7 @@ class DataBase:
             self.connection = psycopg2.connect(
                 dbname=self.dbname,
                 user=self.user,
+                port=self.port,
                 password=self.password,
                 host=self.host,
             )

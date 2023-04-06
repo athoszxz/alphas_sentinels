@@ -4,8 +4,10 @@ from Tab3.RegisterCam import RegisterCam
 
 
 class Tab3Register(QWidget):
-    def __init__(self, user_postgresql, password_postgresql, cap):
+    def __init__(self, port_postgresql, user_postgresql,
+                 password_postgresql, cap):
         super().__init__()
+        self.port_postgresql = port_postgresql
         self.user_postgresql = user_postgresql
         self.password_postgresql = password_postgresql
         self.cap = cap
@@ -19,10 +21,12 @@ class Tab3Register(QWidget):
 
         # Adiciona o formulário de registro
         self.register_form = RegisterForm(
+            self.port_postgresql,
             self.user_postgresql, self.password_postgresql)
 
         # Adiciona a câmera
         self.register_cam = RegisterCam(
+            self.port_postgresql,
             self.cap, self.register_form,
             self.user_postgresql, self.password_postgresql)
 

@@ -14,9 +14,11 @@ from typing import List
 
 
 class RegisterCam(QWidget):
-    def __init__(self, cap: cv2.VideoCapture, register_form: QWidget,
-                 user_postgresql: str, password_postgresql: str) -> None:
+    def __init__(self, port_postgresql: str, cap: cv2.VideoCapture,
+                 register_form: QWidget, user_postgresql: str,
+                 password_postgresql: str) -> None:
         super().__init__()
+        self.port_postgresql: str = port_postgresql
         self.user_postgresql: str = user_postgresql
         self.password_postgresql: str = password_postgresql
         self.cap: cv2.VideoCapture = cap
@@ -86,6 +88,7 @@ class RegisterCam(QWidget):
         # Criar uma conexão com o banco de dados
         try:
             conn = psycopg2.connect(host="localhost",
+                                    port=self.port_postgresql,
                                     database="db_alphas_sentinels_2023_"
                                     + "144325",
                                     user=self.user_postgresql,

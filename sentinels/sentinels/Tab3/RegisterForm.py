@@ -12,8 +12,10 @@ from DataBase import DataBase
 
 
 class RegisterForm(QWidget):
-    def __init__(self, user_postgresql: str, password_postgresql: str) -> None:
+    def __init__(self, port_postgresql: str, user_postgresql: str,
+                 password_postgresql: str) -> None:
         super().__init__()
+        self.port_postgresql: str = port_postgresql
         self.user_postgresql: str = user_postgresql
         self.password_postgresql: str = password_postgresql
         self.image_1: QLabel = QLabel(self)
@@ -172,7 +174,8 @@ class RegisterForm(QWidget):
         date = self.date_input_textbox.text()
         qrcode = self.generate_qrcode(user_id)
 
-        database = DataBase("db_alphas_sentinels_2023_144325",
+        database = DataBase(self.port_postgresql,
+                            "db_alphas_sentinels_2023_144325",
                             self.user_postgresql,
                             self.password_postgresql)
         database.connect(self)

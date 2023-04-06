@@ -3,8 +3,10 @@ from Tab4.Card import Card
 
 
 class Tab4Card(QWidget):
-    def __init__(self, user_postgresql, password_postgresql, cap):
+    def __init__(self, port_postgresql, user_postgresql, password_postgresql,
+                 cap):
         super().__init__()
+        self.port_postgresql = port_postgresql
         self.user_postgresql = user_postgresql
         self.password_postgresql = password_postgresql
         self.cap = cap
@@ -17,8 +19,8 @@ class Tab4Card(QWidget):
         main_h_layout = QHBoxLayout()
 
         # Adiciona o formulário de registro
-        self.card = Card(
-            self.user_postgresql, self.password_postgresql)
+        self.card = Card(self.port_postgresql,
+                         self.user_postgresql, self.password_postgresql)
 
         # Adiciona tudo ao layout principal
         main_h_layout.addWidget(self.card)
