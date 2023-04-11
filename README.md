@@ -1,6 +1,14 @@
 # Alpha's Sentinels
 
-Programa de Visão Computacional para Controle de Acesso
+Aplicativo de Visão Computacional para Controle de Acesso.
+
+O aplicativo foi produzido com banco de dados de forma abstrata de forma que pode-se optar em utilizar mongodb ou postgres antes de gerar o executável.
+
+O treinamento do modelo de reconhecimento facial é feito direto no banco de dados.
+
+As técnicas de processamento utilizadas foram: escovamento de pixels, machine learning e análise de pontos faciais.
+
+![ezgif com-gif-maker](https://user-images.githubusercontent.com/11262233/231280792-99191e47-1597-41de-a157-0478c95fd510.gif)
 
 Bibliotecas: (poetry add b_name)
 - psycopg2 (PostgreSQL)
