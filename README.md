@@ -19,6 +19,7 @@ Bibliotecas para Processamento de Imagens:
 - opencv_contrib_python (cv2)
 - scikit-image
 - matplotlib
+- dlib
 
 Para rodar o programa em desenvolvimento:
 - [Como instalar dlib?](https://medium.com/analytics-vidhya/how-to-install-dlib-library-for-python-in-windows-10-57348ba1117f)
